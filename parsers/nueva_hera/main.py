@@ -16,15 +16,10 @@ def get_listado_products():
             print(f"\n=== Обработка файла: {file_path} ===")
 
             for index, row in df.iterrows():
-                # Переводим всю строку в список строк
                 row_values = [str(val).strip() if pd.notna(val) else "" for val in row]
                 
-                # Если строка совсем пустая — скипаем
                 if not any(row_values):
                     continue
-
-                # 1. Ищем КОД (теперь проверяем индексы 0 И 1)
-                # Код — это либо слово "Cod", либо просто число (как 701, 702)
                 code_idx = -1
                 for i in [0, 1]:
                     if i < len(row_values):
@@ -35,8 +30,6 @@ def get_listado_products():
                 
                 if code_idx == -1:
                     continue
-
-                # 2. Ищем ЦЕНУ (ищем ячейку, где есть "u$s" или цифры в конце строки)
                 price_idx = -1
                 for i in range(len(row_values)-1, code_idx, -1):
                     val = row_values[i].lower()
@@ -47,11 +40,9 @@ def get_listado_products():
                 if price_idx == -1 or price_idx <= code_idx:
                     continue
 
-                # 3. Собираем НАЗВАНИЕ (все что между кодом и ценой)
                 desc_parts = [row_values[i] for i in range(code_idx + 1, price_idx) if row_values[i]]
                 final_description = " ".join(desc_parts)
 
-                # 4. Чистим ЦЕНУ
                 raw_precio = row_values[price_idx]
                 clean_price = re.sub(r'[^\d,.]', '', raw_precio).replace(',', '.')
                 try:
@@ -59,7 +50,6 @@ def get_listado_products():
                 except:
                     float_price = 0.0
 
-                # Выводим результат, если есть описание или код выглядит валидно
                 if final_description or len(row_values[code_idx]) > 0:
                     print(f"Код: {row_values[code_idx]} | Название: {final_description} | Цена: {float_price}")
         
