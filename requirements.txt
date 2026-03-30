@@ -1,3 +1,11 @@
 mercadolibre-python==0.2.2
 python-dotenv==1.1.0
 psycopg2-binary>=2.9,<3.0
+django==5.2.12
+django-environ==0.12.0
+djangorestframework==3.16.0
+Pillow==11.3.0
+aiogram==3.20.0.post0
+whitenoise==6.9.0
+openpyxl==3.1.5
+pandas==3.0.1
