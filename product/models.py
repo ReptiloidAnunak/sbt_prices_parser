@@ -86,5 +86,21 @@ class ProductSupplier(models.Model):
 
     updated_at = models.DateTimeField(auto_now=True)
 
+
+    def save(self, *args, **kwargs):
+        is_new_file = False
+
+        if self.pk:
+            old = Supplier.objects.filter(pk=self.pk).first()
+            if old and old.price_list != self.price_list:
+                is_new_file = True
+        else:
+            is_new_file = True
+
+        super().save(*args, **kwargs)
+
+        # if self.price_list and is_new_file:
+        #     parse_supplier_file.delay(self.id)
+
     def __str__(self):
         return f"{self.product} - {self.supplier} (W:{self.price_wholesale} R:{self.price_retail})"

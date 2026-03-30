@@ -1,7 +1,7 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from .models import Product, ProductSupplier
 from supplier.models import Supplier
-
+from .forms import SupplierAdminForm 
 
 class ProductSupplierInline(admin.TabularInline):
     model = ProductSupplier
@@ -72,6 +72,7 @@ class ProductSupplierAdmin(admin.ModelAdmin):
 
 @admin.register(Supplier)
 class SupplierAdmin(admin.ModelAdmin):
+    form = SupplierAdminForm
 
     list_display = (
         "name",
@@ -83,3 +84,18 @@ class SupplierAdmin(admin.ModelAdmin):
     search_fields = (
         "name",
     )
+
+
+    def save_model(self, request, obj, form, change):
+
+        if obj.website and str(obj.website).lower() == 'nan':
+            obj.website = None
+
+        super().save_model(request, obj, form, change)
+
+        if obj.price_list:
+            self.message_user(
+                request,
+                "Файл успешно загружен и отправлен на обработку 🚀",
+                level=messages.SUCCESS
+            )

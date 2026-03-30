@@ -15,21 +15,28 @@ def load_suppliers():
     file_path = "init_uploads/download_files/Копия Список поставщиков.xlsx"
 
     df = pd.read_excel(file_path, header=1)
-
     df.columns = df.columns.str.strip()
-
     df = df.dropna(how="all")
-
-    print(df.columns.tolist())
-    print(df.head())
-
 
     for row in df.to_dict(orient="records"):
         name = row.get("Название")
         site = row.get("Сайт")
 
-        if not name:
+        if pd.isna(name):
             continue
+
+        name = str(name).strip()
+        if not name or name.lower() == "nan":
+            continue
+
+        if pd.isna(site):
+            site = None
+        else:
+            site = str(site).strip()
+            if not site or site.lower() == "nan":
+                site = None
+            elif not site.startswith(("http://", "https://")):
+                site = "https://" + site
 
         print(name, site)
 
@@ -37,7 +44,6 @@ def load_suppliers():
             name=name,
             website=site
         )
-
 
 
 import pandas as pd
@@ -51,26 +57,20 @@ def clean_category(cat: str) -> str:
 def import_products_from_excel():
     file_path = "init_uploads/download_files/all_prods.xlsx"
 
-    # ✅ читаем ПРАВИЛЬНО
     df = pd.read_excel(file_path, header=0)
 
-    # ✅ чистим названия колонок
     df.columns = df.columns.str.strip()
 
-    # ✅ удаляем полностью пустые строки
     df = df.dropna(how="all")
 
     print("📊 Колонки:", df.columns.tolist())
 
-    # ✅ проверка наличия нужных колонок
     if "Категория товара" not in df.columns or "Наименование" not in df.columns:
         print("❌ Нет нужных колонок в файле!")
         return
 
-    # ✅ допустимые категории из модели
     valid_categories = {c for c, _ in Product._meta.get_field("category").choices}
 
-    # нормализованный маппинг
     normalized_valid = {
         clean_category(c): c for c in valid_categories
     }
@@ -99,14 +99,12 @@ def import_products_from_excel():
             )
         )
 
-    # ✅ убираем дубликаты по названию
     unique_products = {}
     for p in products_to_create:
         unique_products[p.title_sbt] = p
 
     products = list(unique_products.values())
 
-    # ❗ ВАЖНО: без ignore_conflicts (чтобы видеть ошибки)
     Product.objects.bulk_create(products)
 
     print(f"✅ Загружено товаров: {len(products)}")

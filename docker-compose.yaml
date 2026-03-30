@@ -35,6 +35,28 @@ services:
     env_file:
       - .env
     restart: always
+  
+  redis:
+    image: redis:7
+    container_name: sbt_pars_redis
+    networks:
+      - app-network
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sbt_pars_celery
+    command: celery -A api_server worker -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - sbt_pars_db
+    networks:
+      - app-network
+    env_file:
+      - .env
 
 
 networks:
