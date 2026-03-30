@@ -73,6 +73,10 @@ class ProductSupplier(models.Model):
         blank=True
     )
 
+    price_with_iva = models.BooleanField(
+        default=False
+    )
+
     price_retail = models.DecimalField(
         max_digits=10,
         decimal_places=2,

@@ -113,7 +113,7 @@ def import_products_from_excel():
 
 
 def run():
-    # load_suppliers()
+    load_suppliers()
     import_products_from_excel()
 
 

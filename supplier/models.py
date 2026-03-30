@@ -20,12 +20,12 @@ class Supplier(models.Model):
         ordering = ['name']
 
     name = models.CharField(max_length=255, unique=True)
-
     website = models.URLField(blank=True, null=True)
     contact_email = models.EmailField(blank=True, null=True)
     whatsapp = models.CharField(max_length=200,blank=True,  null=True)
     facebook = models.URLField(max_length=200, blank=True, null=True)
-
+    login = models.CharField(max_length=200,blank=True,  null=True)
+    password = models.CharField(max_length=200,blank=True,  null=True)
     price_list = models.FileField(
         upload_to=supplier_price_upload_path,
         null=True,
