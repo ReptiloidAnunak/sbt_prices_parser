@@ -40,16 +40,16 @@ class Supplier(models.Model):
     def process_price_list_async(self):
         """Запускаем Celery задачу вручную"""
         if self.price_list:
-            from supplier.tasks import process_price_list  # <- импорт внутри метода
+            from supplier.tasks import process_price_list
             process_price_list.delay(self.id)
 
 
-# --- Сигнал для автоматического запуска Celery задачи ---
+
 @receiver(post_save, sender=Supplier)
 def trigger_price_list_parse(sender, instance, created, **kwargs):
     """
     Автоматически запускаем Celery задачу при загрузке/обновлении прайс-листа
     """
     if instance.price_list:
-        from supplier.tasks import process_price_list  # <- импорт внутри функции
+        from supplier.tasks import process_price_list
         process_price_list.delay(instance.id)

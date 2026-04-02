@@ -110,9 +110,77 @@ def import_products_from_excel():
     print(f"✅ Загружено товаров: {len(products)}")
 
 
+import pandas as pd
+from supplier.models import Supplier
+from product.models import Product, ProductSupplier
+
+
+
+def load_prods_suppliers_codes_titles():
+# Загружаем Excel
+    df = pd.read_excel("init_uploads/download_files/prods_codes.xlsx")
+
+    # Колонки с кодами
+    code_cols = ["Ansal код", "Reld код", "Bellini код"]
+
+    # Оставляем только строки, где есть хотя бы один код
+    df = df[df[code_cols].notna().any(axis=1)]
+
+    # Кэшируем поставщиков (чтобы не делать 1000 запросов)
+    suppliers = {
+        'Ansal': Supplier.objects.filter(name='Ansal').first(),
+        'Reld': Supplier.objects.filter(name='Reld').first(),
+        'Bellini': Supplier.objects.filter(name='Bellini').first(),
+    }
+
+
+    for _, row in df.iterrows():
+        row_dict = row.to_dict()
+
+        # Ищем продукт
+        product = Product.objects.filter(title_sbt=row_dict['Наименование']).first()
+
+        if not product:
+            print(f"❌ Product not found: {row_dict['Наименование']}")
+            continue
+
+        # --- Ansal ---
+        if pd.notna(row_dict["Ansal код"]) and suppliers['Ansal']:
+            ProductSupplier.objects.update_or_create(
+                product=product,
+                supplier=suppliers['Ansal'],
+                defaults={
+                    "supplier_prod_code": str(row_dict["Ansal код"]).strip()
+                }
+            )
+
+        # --- Reld ---
+        if pd.notna(row_dict["Reld код"]) and suppliers['Reld']:
+            ProductSupplier.objects.update_or_create(
+                product=product,
+                supplier=suppliers['Reld'],
+                defaults={
+                    "supplier_prod_code": str(row_dict["Reld код"]).strip()
+                }
+            )
+
+        # --- Bellini ---
+        if pd.notna(row_dict["Bellini код"]) and suppliers['Bellini']:
+            ProductSupplier.objects.update_or_create(
+                product=product,
+                supplier=suppliers['Bellini'],
+                defaults={
+                    "supplier_prod_code": str(row_dict["Bellini код"]).strip()
+                }
+            )
+
+    print("✅ Импорт завершён")
+
+
 def run():
     load_suppliers()
     import_products_from_excel()
+    load_prods_suppliers_codes_titles()
 
 
 run()

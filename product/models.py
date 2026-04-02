@@ -62,7 +62,7 @@ class ProductSupplier(models.Model):
         on_delete=models.CASCADE,
         related_name="supplier_products"
     )
-
+    
     supplier_prod_code = models.CharField(max_length=255)
     supplier_prod_title = models.CharField(max_length=255)
 
@@ -87,17 +87,17 @@ class ProductSupplier(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
-    def save(self, *args, **kwargs):
-        is_new_file = False
+    # def save(self, *args, **kwargs):
+    #     is_new_file = False
 
-        if self.pk:
-            old = Supplier.objects.filter(pk=self.pk).first()
-            if old and old.price_list != self.price_list:
-                is_new_file = True
-        else:
-            is_new_file = True
+    #     if self.pk:
+    #         old = Supplier.objects.filter(pk=self.pk).first()
+    #         if old and old.price_list != self.price_list:
+    #             is_new_file = True
+    #     else:
+    #         is_new_file = True
 
-        super().save(*args, **kwargs)
+    #     super().save(*args, **kwargs)
 
         # if self.price_list and is_new_file:
         #     parse_supplier_file.delay(self.id)
