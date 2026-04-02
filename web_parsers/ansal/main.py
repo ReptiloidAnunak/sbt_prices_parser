@@ -58,13 +58,14 @@ def get_prods(html):
         try:
             price_text = card.find("div", class_="Precios").text.strip()
             price = price_text.split(" ")[-1]
-            price = price.replace(".", "").replace(",", ".")
+            price = float(price.replace(',', ''))
+            sku = card.find("h4").find("span").text.strip()
 
             result.append({
-                "code": card.find("h4").find("span").text.strip(),
+                "code": sku,
                 "title": card.find("div", class_="desc").text.strip(),
-                "price": float(price),
-                "url": "https://www.ansal.com.ar" + card.find("h4").find("a")["href"]
+                "price": price,
+                "url": "https://www.ansal.com.ar" + '/producto/' + sku
             })
         except Exception:
             continue
@@ -158,4 +159,4 @@ if __name__ == "__main__":
     run()
 
 
-    https://www.ansal.com.ar/search?q=&page=334&viewMode=grid&orderBy=orden%20asc&moneda=ARS
+    # https://www.ansal.com.ar/search?q=&page=334&viewMode=grid&orderBy=orden%20asc&moneda=ARS
