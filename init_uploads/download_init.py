@@ -55,7 +55,7 @@ def clean_category(cat: str) -> str:
 
 
 def import_products_from_excel():
-    file_path = "init_uploads/download_files/all_prods.xlsx"
+    file_path = "init_uploads/download_files/prods_codes.xlsx"
 
     df = pd.read_excel(file_path, header=0)
 
@@ -117,16 +117,10 @@ from product.models import Product, ProductSupplier
 
 
 def load_prods_suppliers_codes_titles():
-# Загружаем Excel
     df = pd.read_excel("init_uploads/download_files/prods_codes.xlsx")
-
-    # Колонки с кодами
     code_cols = ["Ansal код", "Reld код", "Bellini код"]
-
-    # Оставляем только строки, где есть хотя бы один код
     df = df[df[code_cols].notna().any(axis=1)]
 
-    # Кэшируем поставщиков (чтобы не делать 1000 запросов)
     suppliers = {
         'Ansal': Supplier.objects.filter(name='Ansal').first(),
         'Reld': Supplier.objects.filter(name='Reld').first(),

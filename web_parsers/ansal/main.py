@@ -1,4 +1,5 @@
 from playwright.sync_api import sync_playwright
+from playwright._impl._errors import TimeoutError, Error
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
@@ -99,24 +100,35 @@ def collect_prods(page):
 
     while True:
         page_num += 1
-
         url = f"https://www.ansal.com.ar/search?q=&page={page_num}&viewMode=grid&orderBy=orden%20asc&moneda=ARS"
+        try:
+            page.goto(url)
+            sleep_random(4, 8)
 
-        page.goto(url)
-        sleep_random(4, 8)
+            html = page.content()
+            prods = get_prods(html)
 
-        html = page.content()
-        prods = get_prods(html)
+            if not prods:
+                break
 
-        if not prods:
-            break
+            print(f"Page {page_num}: {len(prods)} products")
+        except (Error, TimeoutError) as e:
+            print(f'\n\n{e}\n\n')
+            time.sleep(20)
+            page.goto(url)
+            sleep_random(5, 10)
 
-        print(f"Page {page_num}: {len(prods)} products")
+            html = page.content()
+            prods = get_prods(html)
 
-        # 👉 сохраняем СРАЗУ
-        save_to_csv(prods)
+            if not prods:
+                break
 
-        sleep_random(5, 10)
+            print(f"Page {page_num}: {len(prods)} products")
+        finally:
+            save_to_csv(prods)
+            sleep_random(5, 10)
+            
 
 # -----------------------------
 # CSV -> Excel
@@ -144,6 +156,7 @@ def convert_to_excel():
 # -----------------------------
 
 def run():
+    print("Ansal parser")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
         page = browser.new_page()
@@ -157,6 +170,3 @@ def run():
 
 if __name__ == "__main__":
     run()
-
-
-    # https://www.ansal.com.ar/search?q=&page=334&viewMode=grid&orderBy=orden%20asc&moneda=ARS

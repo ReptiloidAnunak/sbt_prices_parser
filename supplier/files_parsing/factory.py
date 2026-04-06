@@ -5,6 +5,7 @@ from .parsers.fluorgaz import FluorgazParser
 from .parsers.nueva_hera import NuevaHeraParser
 from .parsers.reld import ReldParser
 from .parsers.uriarte import UriarteParser
+from .parsers.distribudora_jc import JcParser
 
 
 PARSERS = {
@@ -15,6 +16,7 @@ PARSERS = {
     "nueva_hera": NuevaHeraParser,
     "reld": ReldParser,
     "uriarte": UriarteParser,
+    "distribuidora jc": JcParser
 }
 
 

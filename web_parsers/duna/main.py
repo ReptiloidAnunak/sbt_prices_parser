@@ -97,7 +97,7 @@ def get_prods_dicts(page) -> list:
         {
             "code": card.find('p', class_='CodigoArticulo Italic').text.strip(),
             "title": card.find('p', class_='NombreArticulo').text.strip(),
-            "price": card.find("div", class_='PrecioFinal').find('p', class_='Precio').text.strip().split(',')[0].replace('.', '')
+            "price": float(card.find("div", class_='PrecioFinal').find('p', class_='Precio').text.strip().split(',')[0].replace('.', ''))
         } for card in prods_cards
         ]
     return cards
