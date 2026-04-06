@@ -49,23 +49,14 @@ def slow_scroll(page, scroll_step=300, delay=0.5):
 # -----------------------------
 def generate_pagination_links(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
-    base_url = "https://tienda.romarep.com.ar/index.php?pag="
-
+    result = []
     pagination_div = soup.find('p', align="center")
+    print()
+    last_page = int(pagination_div.text.split('...')[-1])
 
-    if not pagination_div:
-        return [f"{base_url}1"]
-
-    links = pagination_div.find_all('a')
-    pages = []
-
-    for link in links:
-        text = link.get_text(strip=True)
-        if text.isdigit():
-            pages.append(int(text))
-
-    last_page = max(pages) if pages else 1
-    return [f"{base_url}{i}" for i in range(1, last_page + 1)]
+    for i in range(1, (last_page+1)):
+        result.append(f"https://tienda.romarep.com.ar/index.php?pag={i}")
+    return result
 
 # -----------------------------
 # Parse products
