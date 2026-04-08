@@ -5,7 +5,6 @@ import pandas as pd
 import time
 import random
 import os
-import json
 
 CSV_FILE = "ansal_products.csv"
 XLSX_FILE = "ansal_products.xlsx"

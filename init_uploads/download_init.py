@@ -114,7 +114,27 @@ import pandas as pd
 from supplier.models import Supplier
 from product.models import Product, ProductSupplier
 
+def clean_code(value):
+    if pd.isna(value):
+        return None
 
+    # если это число → убираем .0
+    if isinstance(value, float):
+        if value.is_integer():
+            return str(int(value))
+        return str(value)
+
+    if isinstance(value, int):
+        return str(value)
+
+    # строка
+    value = str(value).strip()
+
+    # защита от "nan"
+    if value.lower() == 'nan':
+        return None
+
+    return value
 
 def load_prods_suppliers_codes_titles():
     df = pd.read_excel("init_uploads/download_files/prods_codes.xlsx")
@@ -127,45 +147,42 @@ def load_prods_suppliers_codes_titles():
         'Bellini': Supplier.objects.filter(name='Bellini').first(),
     }
 
-
     for _, row in df.iterrows():
         row_dict = row.to_dict()
 
-        # Ищем продукт
-        product = Product.objects.filter(title_sbt=row_dict['Наименование']).first()
+        product = Product.objects.filter(
+            title_sbt=row_dict['Наименование']
+        ).first()
 
         if not product:
             print(f"❌ Product not found: {row_dict['Наименование']}")
             continue
 
         # --- Ansal ---
-        if pd.notna(row_dict["Ansal код"]) and suppliers['Ansal']:
+        code = clean_code(row_dict["Ansal код"])
+        if code and suppliers['Ansal']:
             ProductSupplier.objects.update_or_create(
                 product=product,
                 supplier=suppliers['Ansal'],
-                defaults={
-                    "supplier_prod_code": str(row_dict["Ansal код"]).strip()
-                }
+                defaults={"supplier_prod_code": code}
             )
 
         # --- Reld ---
-        if pd.notna(row_dict["Reld код"]) and suppliers['Reld']:
+        code = clean_code(row_dict["Reld код"])
+        if code and suppliers['Reld']:
             ProductSupplier.objects.update_or_create(
                 product=product,
                 supplier=suppliers['Reld'],
-                defaults={
-                    "supplier_prod_code": str(row_dict["Reld код"]).strip()
-                }
+                defaults={"supplier_prod_code": code}
             )
 
         # --- Bellini ---
-        if pd.notna(row_dict["Bellini код"]) and suppliers['Bellini']:
+        code = clean_code(row_dict["Bellini код"])
+        if code and suppliers['Bellini']:
             ProductSupplier.objects.update_or_create(
                 product=product,
                 supplier=suppliers['Bellini'],
-                defaults={
-                    "supplier_prod_code": str(row_dict["Bellini код"]).strip()
-                }
+                defaults={"supplier_prod_code": code}
             )
 
     print("✅ Импорт завершён")
