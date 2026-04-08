@@ -27,7 +27,6 @@ class ReldParser(BaseParser):
         return result
 
     def _find_column(self, df, keyword):
-        # Поиск колонки по ключевому слову (регистронезависимо)
         matches = [c for c in df.columns if keyword.lower() in c.lower()]
         if not matches:
             raise ValueError(f"Колонка с '{keyword}' не найдена")

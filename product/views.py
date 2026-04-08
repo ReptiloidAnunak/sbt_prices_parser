@@ -61,11 +61,11 @@ def import_products(request):
             continue
         else:
             updated += 1
-            logger.info(f"Found: {product_price_obj.supplier_prod_title} == {title}")
+            logger.info(f"Found: {product_price_obj.product.title_sbt} == {title}")
             product_price_obj.price_wholesale = price
             product_price_obj.supplier_prod_title = title
             product_price_obj.save()
-            logger.info(f'Updated: {product_price_obj.supplier_prod_title}')
+            logger.info(f'Updated: {product_price_obj.product.title_sbt}')
 
     buffer = BytesIO()
     df.to_excel(buffer, index=False)
