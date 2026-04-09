@@ -6,7 +6,7 @@ import random
 import os
 import json
 
-CSV_FILE = "fijamom_products.csv"
+JSON_FILE = "fijamom_products.json"
 
 # -----------------------------
 # Utils
@@ -63,17 +63,24 @@ def get_prods(html):
     return products
 
 # -----------------------------
-# Save CSV
+# Save JSON
 # -----------------------------
-def save_to_csv(prods):
-    if not prods:
-        print("No products to save")
-        return
+def save_to_json(prods):
+    if os.path.exists(JSON_FILE):
+        with open(JSON_FILE, 'r', encoding='utf-8') as f:
+            try:
+                existing_data = json.load(f)
+            except json.JSONDecodeError:
+                existing_data = []
+    else:
+        existing_data = []
 
-    df = pd.DataFrame(prods)
-    df.to_csv(CSV_FILE, index=False)
+    existing_data.extend(prods)
 
-    print(f"Saved {len(prods)} products")
+    with open(JSON_FILE, 'w', encoding='utf-8') as f:
+        json.dump(existing_data, f, ensure_ascii=False, indent=2)
+
+    print(f"Saved {len(prods)} products to JSON")
 
 # -----------------------------
 # Scroll + Collect
@@ -100,7 +107,7 @@ def collect_prods(page):
 
     html = page.content()
     prods = get_prods(html)
-    save_to_csv(prods)
+    save_to_json(prods)
 
 # -----------------------------
 # Main

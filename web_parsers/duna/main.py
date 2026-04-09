@@ -5,14 +5,14 @@ import random
 import pandas as pd
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
-
+import json
 
 
 EMAIL = "sbt.international.srl@gmail.com"
 PASSWORD = "asdfghjkl2024"
 
 
-CSV_FILE = "duna_products.csv"
+JSON_FILE = "duna_products.json"
 
 # -----------------------------
 # Utils
@@ -84,10 +84,10 @@ def click_load_more(page):
         except Exception as e:
             print("Стоп:", e)
             break
+        
 # -----------------------------
 # Main
 # -----------------------------
-
 def get_prods_dicts(page) -> list:
     soup = BeautifulSoup(page.content(), 'html.parser')
     prods_grid = soup.find(id='TablaArticulos')
@@ -104,19 +104,23 @@ def get_prods_dicts(page) -> list:
 
 
 
-def save_to_csv(prods):
-    df = pd.DataFrame(prods)
+def save_to_json(prods):
+    if os.path.exists(JSON_FILE):
+        with open(JSON_FILE, 'r', encoding='utf-8') as f:
+            try:
+                existing_data = json.load(f)
+            except json.JSONDecodeError:
+                existing_data = []
+    else:
+        existing_data = []
 
-    file_exists = os.path.exists(CSV_FILE)
+    existing_data.extend(prods)
 
-    df.to_csv(
-        CSV_FILE,
-        mode='a',
-        header=not file_exists,
-        index=False
-    )
+    with open(JSON_FILE, 'w', encoding='utf-8') as f:
+        json.dump(existing_data, f, ensure_ascii=False, indent=2)
 
-    print(f"Saved {len(prods)} products to CSV")
+    print(f"Saved {len(prods)} products to JSON")
+
 
 def run():
     with sync_playwright() as p:
@@ -141,9 +145,8 @@ def run():
             sleep_random(2, 10)
             click_load_more(page)
             cards = get_prods_dicts(page)
-            save_to_csv(cards)
-
         finally:
+            save_to_json(cards)
             browser.close()
 
 

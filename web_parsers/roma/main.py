@@ -3,8 +3,10 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import random
+import json
+import os
 
-CSV_FILE = "roma_products.csv"
+JSON_FILE = "roma_products.json"
 
 # -----------------------------
 # Utils
@@ -91,19 +93,22 @@ def get_prods(html):
 # -----------------------------
 # Save CSV
 # -----------------------------
-def save_to_csv(prods):
-    if not prods:
-        print("No products to save")
-        return
+def save_to_json(prods):
+    if os.path.exists(JSON_FILE):
+        with open(JSON_FILE, 'r', encoding='utf-8') as f:
+            try:
+                existing_data = json.load(f)
+            except json.JSONDecodeError:
+                existing_data = []
+    else:
+        existing_data = []
 
-    df = pd.DataFrame(prods)
+    existing_data.extend(prods)
 
-    # убираем дубли
-    df = df.drop_duplicates(subset='code')
+    with open(JSON_FILE, 'w', encoding='utf-8') as f:
+        json.dump(existing_data, f, ensure_ascii=False, indent=2)
 
-    df.to_csv(CSV_FILE, index=False)
-
-    print(f"Saved {len(df)} unique products")
+    print(f"Saved {len(prods)} products to JSON")
 
 # -----------------------------
 # Collect
@@ -116,8 +121,6 @@ def collect_prods(page):
     links = generate_pagination_links(html)
     print(f"Pages found: {len(links)}")
 
-    result = []
-
     for link in links:
         print(f"Parsing: {link}")
         page.goto(link)
@@ -125,13 +128,8 @@ def collect_prods(page):
 
         html = page.content()
         prods = get_prods(html)
-
         print(f"Found {len(prods)} products")
-        result.extend(prods)
-
-    print(f"Total collected: {len(result)}")
-
-    save_to_csv(result)
+        save_to_json(prods)
 
 # -----------------------------
 # Main
