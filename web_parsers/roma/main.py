@@ -91,7 +91,7 @@ def get_prods(html):
     return products
 
 # -----------------------------
-# Save CSV
+# Save JSON
 # -----------------------------
 def save_to_json(prods):
     if os.path.exists(JSON_FILE):

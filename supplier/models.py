@@ -4,6 +4,14 @@ import datetime
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.core.files.storage import FileSystemStorage
+
+
+class OverwriteStorage(FileSystemStorage):
+    def get_available_name(self, name, max_length=None):
+        if self.exists(name):
+            os.remove(os.path.join(self.location, name))
+        return name
 
 
 def supplier_price_upload_path(instance, filename):
@@ -27,11 +35,14 @@ class Supplier(models.Model):
     facebook = models.URLField(max_length=200, blank=True, null=True)
     login = models.CharField(max_length=200, blank=True, null=True)
     password = models.CharField(max_length=200, blank=True, null=True)
+
     price_list = models.FileField(
         upload_to=supplier_price_upload_path,
+        storage=OverwriteStorage(),  # 👈 ключевая строка
         null=True,
         blank=True
     )
+
     updated_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
@@ -42,7 +53,6 @@ class Supplier(models.Model):
         if self.price_list:
             from supplier.tasks import process_price_list
             process_price_list.delay(self.id)
-
 
 
 @receiver(post_save, sender=Supplier)
