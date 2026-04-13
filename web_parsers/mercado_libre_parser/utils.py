@@ -78,3 +78,9 @@ def save_to_json(shop, prods):
         json.dump(existing_data, f, ensure_ascii=False, indent=2)
 
     print(f"Saved {len(prods)} products to JSON")
+
+
+def get_next_btn(soup: BeautifulSoup):
+    btn_next = soup.find('li', class_='andes-pagination__button andes-pagination__button--next')
+    if btn_next: return True
+    else: return False

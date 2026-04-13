@@ -38,7 +38,7 @@ class Supplier(models.Model):
 
     price_list = models.FileField(
         upload_to=supplier_price_upload_path,
-        storage=OverwriteStorage(),  # 👈 ключевая строка
+        storage=OverwriteStorage(),
         null=True,
         blank=True
     )
