@@ -6,10 +6,17 @@ import pandas as pd
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 import json
+from dotenv import load_dotenv
+
+def load_login_pwd():
+    load_dotenv('.env')
+    return {
+            'LOGIN': os.environ.get('LOGIN'),
+            'PASSWORD': os.environ.get('PASSWORD')
+            }
 
 
-EMAIL = "sbt.international.srl@gmail.com"
-PASSWORD = "asdfghjkl2024"
+login_data = load_login_pwd()
 
 
 JSON_FILE = "duna_products.json"
@@ -42,8 +49,8 @@ def login(page):
 
     page.wait_for_selector('input[name="EmailInicioSesion"]', timeout=10000)
 
-    page.locator('input[name="EmailInicioSesion"]').fill(EMAIL)
-    page.locator('input[name="PassInicioSesion"]').fill(PASSWORD)
+    page.locator('input[name="EmailInicioSesion"]').fill(login_data['LOGIN'])
+    page.locator('input[name="PassInicioSesion"]').fill(login_data['PASSWORD'])
 
     page.locator('form.FrmLogin a.Boton').click()
 

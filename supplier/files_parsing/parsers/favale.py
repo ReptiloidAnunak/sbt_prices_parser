@@ -6,7 +6,7 @@ from supplier.files_parsing.base import BaseParser
 class FavaleParser(BaseParser):
 
     def parse(self, file_path):
-        df = pd.read_excel(file_path)  # <-- просто так, без header=None
+        df = pd.read_excel(file_path)
 
         df.columns = [str(col).strip().upper() for col in df.columns]
 

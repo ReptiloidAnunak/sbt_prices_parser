@@ -10,10 +10,16 @@ for dir in "$BASE_DIR"/*/; do
 
         if [ -f ".venv/bin/activate" ]; then
             source .venv/bin/activate
-            python3 -m send_json
+
+            if [ -f "send_json.py" ]; then
+                python3 -m send_json
+            else
+                echo "⚠️ Нет send_json.py"
+            fi
+
             deactivate
         else
-            echo "Нет виртуального окружения в $dir"
+            echo "Нет виртуального окружения"
         fi
 
         cd - > /dev/null

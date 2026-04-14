@@ -5,6 +5,18 @@ import time
 import random
 import json
 import os
+from dotenv import load_dotenv
+
+def load_login_pwd():
+    load_dotenv('.env')
+    return {
+            'LOGIN': os.environ.get('LOGIN'),
+            'PASSWORD': os.environ.get('PASSWORD')
+            }
+
+
+login_data = load_login_pwd()
+
 
 JSON_FILE = "roma_products.json"
 
@@ -22,10 +34,10 @@ def enter_roma(page):
 
     page.wait_for_selector('input[placeholder="E-mail"]')
 
-    page.fill('input[placeholder="E-mail"]', 'sbt.international.srl@gmail.com')
+    page.fill('input[placeholder="E-mail"]', login_data['LOGIN'])
     sleep_random(1, 2)
 
-    page.fill('input[placeholder="Contraseña"]', '12345678')
+    page.fill('input[placeholder="Contraseña"]', login_data['PASSWORD'])
     sleep_random(1, 2)
 
     page.get_by_role("button").click()

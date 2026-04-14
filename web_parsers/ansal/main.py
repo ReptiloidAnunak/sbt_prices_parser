@@ -5,6 +5,7 @@ import pandas as pd
 import time
 import random
 import os
+from dotenv import load_dotenv
 import json
 
 CSV_FILE = "ansal_products.csv"
@@ -22,6 +23,18 @@ def sleep_random(a=2, b=5):
 # Login
 # -----------------------------
 
+def load_login_pwd():
+    load_dotenv('.env')
+    return {
+            'LOGIN': os.environ.get('LOGIN'),
+            'PASSWORD': os.environ.get('PASSWORD')
+            }
+
+
+login_data = load_login_pwd()
+
+
+
 def enter_ansal(page):
     page.goto("https://www.ansal.com.ar/")
     sleep_random(3, 6)
@@ -31,10 +44,10 @@ def enter_ansal(page):
 
     page.wait_for_selector('input[placeholder="Cliente"]')
 
-    page.fill('input[placeholder="Cliente"]', '254902')
+    page.fill('input[placeholder="Cliente"]', login_data['LOGIN'])
     sleep_random(1, 2)
 
-    page.fill('input[placeholder="Contraseña"]', '30718398254')
+    page.fill('input[placeholder="Contraseña"]', login_data['PASSWORD'])
     sleep_random(1, 2)
 
     page.get_by_role("button").click()
@@ -76,7 +89,7 @@ def get_prods(html):
     return result
 
 # -----------------------------
-# Save JSON (append!)
+# Save JSON
 # -----------------------------
 
 def save_to_json(prods):

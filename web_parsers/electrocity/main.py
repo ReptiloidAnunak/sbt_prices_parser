@@ -4,6 +4,18 @@ import random
 import os
 import json
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+
+def load_login_pwd():
+    load_dotenv('.env')
+    return {
+            'LOGIN': os.environ.get('LOGIN'),
+            'PASSWORD': os.environ.get('PASSWORD')
+            }
+
+
+login_data = load_login_pwd()
+
 
 JSON_FILE = "electrocity_products.json"
 
@@ -22,8 +34,8 @@ def login_electrocity(page):
     page.goto("https://electrocity.com.ar/account/login/")
     sleep_random(1, 2)
 
-    page.fill('input[name="email"]', "sbt.international.srl@gmail.com")
-    page.fill('input[name="password"]', "sbtint2026")
+    page.fill('input[name="email"]', login_data['LOGIN'])
+    page.fill('input[name="password"]', login_data['PASSWORD'])
 
     sleep_random(1, 2)
     page.get_by_role("button", name="Iniciar sesión").click()

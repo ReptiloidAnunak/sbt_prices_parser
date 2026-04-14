@@ -5,6 +5,17 @@ import json
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 from playwright._impl._errors import TimeoutError
+from dotenv import load_dotenv
+
+def load_login_pwd():
+    load_dotenv('.env')
+    return {
+            'LOGIN': os.environ.get('LOGIN'),
+            'PASSWORD': os.environ.get('PASSWORD')
+            }
+
+
+login_data = load_login_pwd()
 
 JSON_FILE = "norfrig_products.json"
 
@@ -22,8 +33,8 @@ def enter_nordfrig(page):
 
     page.wait_for_selector('#inputEmail')
 
-    page.fill('#inputEmail', "sbt.international.srl@gmail.com")
-    page.fill('#inputPassword', "sbtint2026")
+    page.fill('#inputEmail', login_data['LOGIN'])
+    page.fill('#inputPassword', login_data['PASSWORD'])
 
     sleep_random()
     page.get_by_role('button').click()

@@ -70,7 +70,7 @@ def save_prods_to_excel():
 
     products = (
         session.query(Product)
-        .options(joinedload(Product.shop))  # 💥 вот ключевая строка
+        .options(joinedload(Product.shop))
         .all()
     )
 

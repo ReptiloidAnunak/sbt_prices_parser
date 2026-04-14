@@ -5,6 +5,17 @@ import random
 from bs4 import BeautifulSoup
 import os
 import json
+from dotenv import load_dotenv
+
+def load_login_pwd():
+    load_dotenv('.env')
+    return {
+            'LOGIN': os.environ.get('LOGIN'),
+            'PASSWORD': os.environ.get('PASSWORD')
+            }
+
+
+login_data = load_login_pwd()
 
 JSON_FILE = "electrofrig_products.json"
 
@@ -16,8 +27,8 @@ def login_electrofrig(page):
     page.goto("http://www.electrofrig.com.ar/es/login.php")
     sleep_random()
 
-    page.locator("#email").fill("sbt.international.srl@gmail.com")
-    page.locator("#clave").fill("Asdfghj-2025")
+    page.locator("#email").fill(login_data["LOGIN"])
+    page.locator("#clave").fill(login_data["PASSWORD"])
 
     sleep_random()
     page.locator("a.shadowtext").click()

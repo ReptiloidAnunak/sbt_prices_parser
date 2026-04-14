@@ -5,8 +5,8 @@ import random
 from settings import DATA_FOLDER
 from utils  import get_useragents, get_prods_from_page, save_prods_db, get_next_btn
 from data_base.models import Shop, Product
-from data_base.tools import get_shops
 from data_base.tools import save_prods_to_excel
+from data_base.tools import get_shops
 
 USER_AGENTS = get_useragents()
 
@@ -85,11 +85,11 @@ def parse_ml_shop(shop: Shop):
 
 
 def run_app():
-    # shops = get_shops()
-    # for shop in shops[6:]:
-    #     print(shop.title.capitalize())
-    #     print(shop.url)
-    #     parse_ml_shop(shop)
+    shops = get_shops()
+    for shop in shops[6:]:
+        print(shop.title.capitalize())
+        print(shop.url)
+        parse_ml_shop(shop)
     save_prods_to_excel()
     
 
