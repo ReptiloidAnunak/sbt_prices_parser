@@ -7,12 +7,14 @@ from .parsers.reld import ReldParser
 from .parsers.uriarte import UriarteParser
 from .parsers.distribudora_jc import JcParser
 from .parsers.casa_jarse import CasaJarseParser
+from .parsers.favale import FavaleParser
 
 
 PARSERS = {
     "belgrano": BelgranoParser,
     "bellini": BelliniParser,
     "fluorgaz": FluorgazParser,
+    "favale": FavaleParser,
     "imi": ImiParser,
     "importadora_nueva_hera": NuevaHeraParser,
     "reld": ReldParser,

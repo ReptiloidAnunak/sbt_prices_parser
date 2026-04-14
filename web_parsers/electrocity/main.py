@@ -132,14 +132,12 @@ def load_and_collect(page, max_rounds=50):
                 except:
                     button.click(force=True)
 
-                # ⬇️ ВАЖНО: даем странице догрузиться
                 time.sleep(random.uniform(2.0, 3.5))
 
                 clicked = True
                 break
 
         if not clicked:
-            # финальный скролл
             page.mouse.wheel(0, 3000)
             time.sleep(random.uniform(2.0, 3.0))
 
