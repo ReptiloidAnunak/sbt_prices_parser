@@ -35,7 +35,6 @@ def add_product(shop_id, sku, name, price, url):
         price=price,
         url=url
     )
-
     try:
         session.add(product)
         session.commit()
@@ -57,9 +56,7 @@ def add_product(shop_id, sku, name, price, url):
 
 def get_products(shop_id):
     session = SessionLocal()
-
     products = session.query(Product).filter(Product.shop_id == shop_id).all()
-
     session.close()
     return products
 
@@ -67,13 +64,11 @@ def get_products(shop_id):
 
 def save_prods_to_excel():
     session = SessionLocal()
-
     products = (
         session.query(Product)
         .options(joinedload(Product.shop))
         .all()
     )
-
     data = []
     for p in products:
         data.append({
