@@ -1,16 +1,11 @@
 import pandas as pd
 import re
-import os
-
-
-
 import pandas as pd
 import re
 from supplier.files_parsing.base import BaseParser
 
 
 class ImiParser(BaseParser):
-
     def parse(self, file_path):
         df = pd.read_excel(file_path, header=None)
 
