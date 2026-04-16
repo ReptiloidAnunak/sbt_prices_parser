@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  ansal_parser:
+  electrofrig_parser:
     build: .
     container_name: electrofrig_parser
 

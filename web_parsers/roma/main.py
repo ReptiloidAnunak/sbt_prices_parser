@@ -1,11 +1,13 @@
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
-import pandas as pd
+from settings import JSON_FILE
 import time
 import random
 import json
 import os
 from dotenv import load_dotenv
+from send_json import send_products_json
+from logger import get_logger
 
 def load_login_pwd():
     load_dotenv('.env')
@@ -17,8 +19,7 @@ def load_login_pwd():
 
 login_data = load_login_pwd()
 
-
-JSON_FILE = "roma_products.json"
+logger = get_logger()
 
 # -----------------------------
 # Utils
@@ -65,7 +66,6 @@ def generate_pagination_links(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     result = []
     pagination_div = soup.find('p', align="center")
-    print()
     last_page = int(pagination_div.text.split('...')[-1])
 
     for i in range(1, (last_page+1)):
@@ -120,7 +120,7 @@ def save_to_json(prods):
     with open(JSON_FILE, 'w', encoding='utf-8') as f:
         json.dump(existing_data, f, ensure_ascii=False, indent=2)
 
-    print(f"Saved {len(prods)} products to JSON")
+    logger.info(f"Saved {len(prods)} products to JSON")
 
 # -----------------------------
 # Collect
@@ -131,26 +131,26 @@ def collect_prods(page):
     sleep_random(2, 4)
 
     links = generate_pagination_links(html)
-    print(f"Pages found: {len(links)}")
+    logger.info(f"Pages found: {len(links)}")
 
     for link in links:
-        print(f"Parsing: {link}")
+        logger.info(f"Parsing: {link}")
         page.goto(link)
         sleep_random(1, 3)
 
         html = page.content()
         prods = get_prods(html)
-        print(f"Found {len(prods)} products")
+        logger.info(f"Found {len(prods)} products")
         save_to_json(prods)
 
 # -----------------------------
 # Main
 # -----------------------------
 def run():
-    print("Roma parser")
+    logger.info("Roma parser")
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
         try:
@@ -164,6 +164,7 @@ def run():
 
         finally:
             browser.close()
+            send_products_json(JSON_FILE, 'Roma Repuestos insumos')
 
 if __name__ == "__main__":
     run()

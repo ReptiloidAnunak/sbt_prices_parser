@@ -1,0 +1,252 @@
+[
+  {
+    "code": "Cod12549",
+    "title": "CAPA.400V 20MF IMPORTADO",
+    "price": 2.66
+  },
+  {
+    "code": "Cod12412",
+    "title": "CAPA.400V 2.5MF SICAP",
+    "price": 1.49
+  },
+  {
+    "code": "Cod12668",
+    "title": "CAPA.400V 2.5MF CUADRADO",
+    "price": 0.62
+  },
+  {
+    "code": "Cod12408",
+    "title": "CAPA.400V 2.5MF SICAP CARAMELO",
+    "price": 1.8
+  },
+  {
+    "code": "Cod12419",
+    "title": "CAPA.400V 18MF SICAP",
+    "price": 3.84
+  },
+  {
+    "code": "Cod12547",
+    "title": "CAPA.400V 18MF IMPORTADO",
+    "price": 2.37
+  },
+  {
+    "code": "Cod12418",
+    "title": "CAPA.400V 16MF SICAP C/TORN",
+    "price": 3.38
+  },
+  {
+    "code": "Cod12546",
+    "title": "CAPA.400V 16MF IMPORTADO",
+    "price": 2.2
+  },
+  {
+    "code": "Cod12439",
+    "title": "CAPA.400V 14MF SICAP",
+    "price": 3.01
+  },
+  {
+    "code": "Cod12544",
+    "title": "CAPA.400V 14MF IMPORTADO",
+    "price": 2.18
+  },
+  {
+    "code": "Cod12417",
+    "title": "CAPA.400V 12.5MF SICAP C/TORN",
+    "price": 2.99
+  },
+  {
+    "code": "Cod12540",
+    "title": "CAPA.400V 10MF NINGBO",
+    "price": 1.13
+  },
+  {
+    "code": "Cod12410",
+    "title": "CAPA.400V 1.5MF SICAP",
+    "price": 1.36
+  },
+  {
+    "code": "Cod12662",
+    "title": "CAPA.400V 1.5MF CUADRADO",
+    "price": 0.51
+  },
+  {
+    "code": "Cod12406",
+    "title": "CAPA.400V 1.5MF SICAP CARAMELO",
+    "price": 1.36
+  },
+  {
+    "code": "Cod12746",
+    "title": "CAPA.330V 170-190 SICAP",
+    "price": 10.1
+  },
+  {
+    "code": "Cod12745",
+    "title": "CAPA.330V 140-160 SICAP",
+    "price": 8.63
+  },
+  {
+    "code": "Cod12744",
+    "title": "CAPA.330V 120-140 SICAP",
+    "price": 8.18
+  },
+  {
+    "code": "Cod12742",
+    "title": "CAPA.330V 101-107SICAP",
+    "price": 6.37
+  },
+  {
+    "code": "Cod12743",
+    "title": "CAPA.330V 100-120 SICAP",
+    "price": 6.65
+  },
+  {
+    "code": "Cod12705",
+    "title": "CAPA.330V 080-100 SICAP",
+    "price": 5.69
+  },
+  {
+    "code": "Cod12740",
+    "title": "CAPA.330V 070-090 SICAP",
+    "price": 5.05
+  },
+  {
+    "code": "Cod12738",
+    "title": "CAPA.330V 050-060 SICAP",
+    "price": 4.26
+  },
+  {
+    "code": "Cod12806",
+    "title": "CAPA.110V*120-140LEYDEN",
+    "price": 3.53
+  },
+  {
+    "code": "Cod12805",
+    "title": "CAPA.110V*100-120LEYDEN",
+    "price": 3.53
+  },
+  {
+    "code": "Cod12804",
+    "title": "CAPA.110V*080-100LEYDEN",
+    "price": 3.07
+  },
+  {
+    "code": "Cod12833",
+    "title": "CAPA.110V*050-060LEYDEN",
+    "price": 2.75
+  },
+  {
+    "code": "Cod12734",
+    "title": "CAPA.110V 700-800 SICAP",
+    "price": 12.04
+  },
+  {
+    "code": "Cod12733",
+    "title": "CAPA.110V 600-700 SICAP",
+    "price": 9.24
+  },
+  {
+    "code": "Cod12732",
+    "title": "CAPA.110V 500-600 SICAP",
+    "price": 7.44
+  },
+  {
+    "code": "Cod12731",
+    "title": "CAPA.110V 450-500 SICAP",
+    "price": 7.04
+  },
+  {
+    "code": "Cod12722",
+    "title": "CAPA.110V 400-430 SICAP",
+    "price": 6.51
+  },
+  {
+    "code": "Cod12729",
+    "title": "CAPA.110V 380-420 SICAP",
+    "price": 6.1
+  },
+  {
+    "code": "Cod12730",
+    "title": "CAPA.110V 350-400 SICAP",
+    "price": 5.63
+  },
+  {
+    "code": "Cod12728",
+    "title": "CAPA.110V 320-360 SICAP",
+    "price": 4.93
+  },
+  {
+    "code": "Cod12727",
+    "title": "CAPA.110V 270-310 SICAP",
+    "price": 4.89
+  },
+  {
+    "code": "Cod12725",
+    "title": "CAPA.110V 210-240 SICAP",
+    "price": 4.11
+  },
+  {
+    "code": "Cod12712",
+    "title": "CAPA.110V 170-190 SICAP",
+    "price": 4.1
+  },
+  {
+    "code": "Cod12711",
+    "title": "CAPA.110V 140-160SICAP",
+    "price": 3.79
+  },
+  {
+    "code": "Cod12710",
+    "title": "CAPA.110V 120-140SICAP",
+    "price": 3.53
+  },
+  {
+    "code": "Cod12704",
+    "title": "CAPA.110V 070-090SICAP",
+    "price": 2.91
+  },
+  {
+    "code": "Cod12702",
+    "title": "CAPA.110V 050-060 SICAP",
+    "price": 2.75
+  },
+  {
+    "code": "Cod1975",
+    "title": "CAÑO TIRA 7/8KG-0.60 KG/M",
+    "price": 28.77
+  },
+  {
+    "code": "Cod1973",
+    "title": "CAÑO TIRA 5/8KG-0.440KG/M",
+    "price": 28.77
+  },
+  {
+    "code": "Cod1970",
+    "title": "CAÑO TIRA 3/8KG-0.240KG/M ¾",
+    "price": 28.77
+  },
+  {
+    "code": "Cod1974",
+    "title": "CAÑO TIRA 3/4KG-0.530KG/M",
+    "price": 28.77
+  },
+  {
+    "code": "Cod1983",
+    "title": "CAÑO TIRA 2''KG-1.380KG/M ¾",
+    "price": 29.99
+  },
+  {
+    "code": "Cod1976",
+    "title": "CAÑO TIRA 1''KG-0.71 KG/M",
+    "price": 28.77
+  },
+  {
+    "code": "Cod1971",
+    "title": "CAÑO TIRA 1/2KG-0.34 KG/M",
+    "price": 28.77
+  },
+  {
+    "code": "Cod1982",
+    "title": "CAÑO TIRA 1.5/8KG-1.150KG/M ¾",
+    "price": 28.77
+  }
+]

@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  ansal_parser:
+  roma_parser:
     build: .
     container_name: roma_parser
 

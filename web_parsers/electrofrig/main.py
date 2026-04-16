@@ -6,6 +6,11 @@ from bs4 import BeautifulSoup
 import os
 import json
 from dotenv import load_dotenv
+from send_json import send_products_json
+from settings import JSON_FILE
+from logger import get_logger
+
+logger = get_logger()
 
 def load_login_pwd():
     load_dotenv('.env')
@@ -17,8 +22,6 @@ def load_login_pwd():
 
 login_data = load_login_pwd()
 
-JSON_FILE = "electrofrig_products.json"
-
 def sleep_random(a=2, b=5):
     time.sleep(random.uniform(a, b))
 
@@ -26,15 +29,12 @@ def sleep_random(a=2, b=5):
 def login_electrofrig(page):
     page.goto("http://www.electrofrig.com.ar/es/login.php")
     sleep_random()
-
     page.locator("#email").fill(login_data["LOGIN"])
     page.locator("#clave").fill(login_data["PASSWORD"])
-
     sleep_random()
     page.locator("a.shadowtext").click()
     page.wait_for_load_state("networkidle")
-    print("Login - OK")
-
+    logger.info("Login Electrofrig: ✅")
     sleep_random(5)
 
 
@@ -51,7 +51,6 @@ def get_products(soup: BeautifulSoup):
     return cards
 
 
-
 def save_to_json(prods):
     if os.path.exists(JSON_FILE):
         with open(JSON_FILE, 'r', encoding='utf-8') as f:
@@ -66,14 +65,14 @@ def save_to_json(prods):
 
     with open(JSON_FILE, 'w', encoding='utf-8') as f:
         json.dump(existing_data, f, ensure_ascii=False, indent=2)
+    logger.info(f"Saved {len(prods)} products to JSON")
 
-    print(f"Saved {len(prods)} products to JSON")
 
 def run():
-    print("Electrogrig parser")
+    logger.info("Electrogrig parser")
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
         login_electrofrig(page)
@@ -81,7 +80,7 @@ def run():
         index_link = "http://www.electrofrig.com.ar/es/catalogo_listado.php"
         page.goto(index_link)
 
-        current_page = 164
+        current_page = 1
 
         while True:
             link = f"{index_link}?page={current_page}"
@@ -90,7 +89,7 @@ def run():
             except Error:
                 time.sleep(5)
                 page.goto(link)
-            print(f"Page {current_page}")
+            logger.info(f"Page {current_page}")
 
             content = page.content()
             soup = BeautifulSoup(content, 'html.parser')
@@ -102,6 +101,8 @@ def run():
             sleep_random(3, 5)
 
         browser.close()
+
+        send_products_json(JSON_FILE, 'Electrofrig')
 
 
 if __name__ == "__main__":
