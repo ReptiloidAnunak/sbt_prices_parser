@@ -2,11 +2,16 @@
 import os
 import time
 import random
-import pandas as pd
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 import json
 from dotenv import load_dotenv
+from logger import get_logger
+from send_json import send_products_json
+from settings import JSON_FILE
+
+logger = get_logger()
+
 
 def load_login_pwd():
     load_dotenv('.env')
@@ -17,9 +22,6 @@ def load_login_pwd():
 
 
 login_data = load_login_pwd()
-
-
-JSON_FILE = "duna_products.json"
 
 # -----------------------------
 # Utils
@@ -40,9 +42,9 @@ def enter_duna(page):
 def close_popup_if_exists(page):
     try:
         page.locator("#CheckBoxPopup").click(timeout=3000)
-        print("Popup closed")
+        logger.info("Popup closed")
     except:
-        print("No popup")
+        logger.info("No popup")
 
 
 def login(page):
@@ -67,11 +69,11 @@ def click_load_more(page):
             load_more = page.locator("p.load-more")
 
             if not load_more.is_visible():
-                print("No button")
+                logger.info("No button")
                 sleep_random(2,4)
                 load_more = page.locator("p.load-more")
                 if not load_more.is_visible():
-                    print("No button")
+                    logger.info("No button")
                     time.sleep(10)
                     break
 
@@ -80,7 +82,7 @@ def click_load_more(page):
 
 
             load_more.click()
-            print("VER MÁS")
+            logger.info("VER MÁS")
 
             page.wait_for_function(
                 """(count) => document.querySelectorAll('.CeldaArticulo').length > count""",
@@ -89,7 +91,7 @@ def click_load_more(page):
             )
 
         except Exception as e:
-            print("Стоп:", e)
+            logger.info("Стоп:", e)
             break
         
 # -----------------------------
@@ -126,13 +128,13 @@ def save_to_json(prods):
     with open(JSON_FILE, 'w', encoding='utf-8') as f:
         json.dump(existing_data, f, ensure_ascii=False, indent=2)
 
-    print(f"Saved {len(prods)} products to JSON")
+    logger.info(f"Saved {len(prods)} products to JSON")
 
 
 def run():
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=False,
+            headless=True,
             slow_mo=50
         )
         page = browser.new_page()
@@ -144,8 +146,8 @@ def run():
 
             login(page)
 
-            print("Login attempt finished")
-            print("Current URL:", page.url)
+            logger.info("Login attempt finished")
+            logger.info(f"Current URL: {page.url}")
             sleep_random(3, 5)
 
             page.goto('https://www.agrupacionduna.com/articulos.php?id_familia=9592')
@@ -155,6 +157,8 @@ def run():
         finally:
             save_to_json(cards)
             browser.close()
+
+    send_products_json(JSON_FILE, 'Duna')
 
 
 if __name__ == "__main__":

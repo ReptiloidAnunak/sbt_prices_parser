@@ -1,5 +1,5 @@
 pytest-playwright==0.7.2
 beautifulsoup4==4.14.3
-pandas==3.0.2
+pandas==2.3.3
 requests==2.33.1
 python-dotenv==1.1.0

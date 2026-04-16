@@ -3,9 +3,13 @@
 
 import requests
 import json
+import os
+from settings import JSON_FILE
 
-
-API_URL = "http://localhost:8010/api/products/import/"
+API_URL = os.getenv(
+    "API_URL",
+    "http://host.docker.internal:8010/api/products/import/"
+)
 
 
 def send_products_json(file_path, supplier):
@@ -21,4 +25,4 @@ def send_products_json(file_path, supplier):
     return response
 
 
-send_products_json('fijamom_products.json', 'Fijamom')
+send_products_json(JSON_FILE, 'Fijamom')

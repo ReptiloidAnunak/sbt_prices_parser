@@ -4,7 +4,6 @@
 import requests
 import json
 from logger import get_logger
-
 import os
 
 API_URL = os.getenv(

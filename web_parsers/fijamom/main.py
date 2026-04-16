@@ -6,6 +6,11 @@ import random
 import os
 import json
 from dotenv import load_dotenv
+from logger import get_logger
+from settings import JSON_FILE
+
+
+logger = get_logger()
 
 def load_login_pwd():
     load_dotenv('.env')
@@ -16,8 +21,6 @@ def load_login_pwd():
 
 
 login_data = load_login_pwd()
-
-JSON_FILE = "fijamom_products.json"
 
 # -----------------------------
 # Utils
@@ -41,6 +44,8 @@ def enter_fijamom(page):
     page.get_by_role("button").click()
     page.wait_for_load_state("networkidle")
     sleep_random(3, 5)
+    logger.info('Login Fijamom: ✅')
+
 
 # -----------------------------
 # Parse products
@@ -91,7 +96,7 @@ def save_to_json(prods):
     with open(JSON_FILE, 'w', encoding='utf-8') as f:
         json.dump(existing_data, f, ensure_ascii=False, indent=2)
 
-    print(f"Saved {len(prods)} products to JSON")
+    logger.info(f"Saved {len(prods)} products to JSON")
 
 # -----------------------------
 # Scroll + Collect
@@ -124,10 +129,10 @@ def collect_prods(page):
 # Main
 # -----------------------------
 def run():
-    print("Fijamom parser")
+    logger.info("Fijamom parser")
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
         try:

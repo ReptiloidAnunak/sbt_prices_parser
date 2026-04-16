@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  electrocity_parser:
+    build: .
+    container_name: electrocity_parser
+
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+      - ./data:/app/data
+
+    environment:
+      - LOG_FILE=/app/logs/electrocity.log
+      - API_URL=http://host.docker.internal:8010/api/products/import/
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    restart: unless-stopped
