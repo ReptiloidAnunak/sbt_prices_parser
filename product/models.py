@@ -19,16 +19,20 @@ class Product(models.Model):
 
     category = models.CharField(
         max_length=255,
-        choices=CATEGORY_CHOICES
+        choices=CATEGORY_CHOICES,
+        verbose_name="Категория"
     )
 
-    title_sbt = models.CharField(max_length=255)
+    code_sbt = models.IntegerField(null=True, verbose_name="Код СБТ")
+
+    title_sbt = models.CharField(max_length=255, verbose_name="Название СБТ")
 
     suppliers = models.ManyToManyField(
         Supplier,
         through="ProductSupplier",
         related_name="products",
-        blank=True
+        blank=True,
+        verbose_name="Поставщик"
     )
 
     def __str__(self):
@@ -54,23 +58,26 @@ class ProductSupplier(models.Model):
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name="product_suppliers"
+        related_name="product_suppliers",
+        verbose_name="Товар"
     )
 
     supplier = models.ForeignKey(
         Supplier,
         on_delete=models.CASCADE,
-        related_name="supplier_products"
+        related_name="supplier_products",
+        verbose_name="Поставщик"
     )
     
-    supplier_prod_code = models.CharField(max_length=255)
-    supplier_prod_title = models.CharField(max_length=255)
+    supplier_prod_code = models.CharField(max_length=255, verbose_name="Код тов. поставщика")
+    supplier_prod_title = models.CharField(max_length=255, verbose_name="Название тов. поставщика")
 
     price_wholesale = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
-        blank=True
+        blank=True,
+        verbose_name="Оптовая цена"
     )
 
     price_with_iva = models.BooleanField(
@@ -81,10 +88,11 @@ class ProductSupplier(models.Model):
         max_digits=10,
         decimal_places=2,
         null=True,
-        blank=True
+        blank=True,
+        verbose_name="Розничная цена"
     )
 
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Время обновления')
 
     def __str__(self):
         return f"{self.product} - {self.supplier} (W:{self.price_wholesale} R:{self.price_retail})"

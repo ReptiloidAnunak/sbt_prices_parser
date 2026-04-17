@@ -24,7 +24,7 @@ def send_products_json(file_path, supplier):
     }
 
     response = requests.post(API_URL, json=payload)
-    logger.info("Status:", response.status_code)
-    logger.info("Response:", response.text)
+    logger.info(f"Status: {response.status_code}")
+    logger.info(f"Response: {response.text}",)
     return response
 

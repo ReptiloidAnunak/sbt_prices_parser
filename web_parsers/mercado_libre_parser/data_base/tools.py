@@ -3,31 +3,26 @@ from .models import Shop, Product
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 import pandas as pd
-from sqlalchemy.orm import Session
 from .init_db import engine
 
 def add_shop(title, url):
     session = SessionLocal()
-
     shop = Shop(title=title, url=url)
     session.add(shop)
-
     session.commit()
     session.close()
 
 
 def get_shops():
     session = SessionLocal()
-
     shops = session.query(Shop).all()
-
     session.close()
     return shops
 
 
+
 def add_product(shop_id, sku, name, price, url):
     session = SessionLocal()
-
     product = Product(
         shop_id=shop_id,
         sku=sku,
@@ -52,7 +47,11 @@ def add_product(shop_id, sku, name, price, url):
         session.close()
         return product
         
-
+def get_products_all():
+    session = SessionLocal()
+    products = session.query(Product).all()
+    session.close()
+    return products
 
 def get_products(shop_id):
     session = SessionLocal()

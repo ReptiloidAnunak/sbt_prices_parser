@@ -28,14 +28,14 @@ class Supplier(models.Model):
         verbose_name_plural = 'Поставщики'
         ordering = ['name']
 
-    name = models.CharField(max_length=255, unique=True)
-    website = models.URLField(blank=True, null=True)
-    contact_email = models.EmailField(blank=True, null=True)
-    whatsapp = models.CharField(max_length=200, blank=True, null=True)
-    facebook = models.URLField(max_length=200, blank=True, null=True)
-    login = models.CharField(max_length=200, blank=True, null=True)
-    password = models.CharField(max_length=200, blank=True, null=True)
-
+    name = models.CharField(max_length=255, unique=True, verbose_name="Название")
+    website = models.URLField(blank=True, null=True, verbose_name="Сайт")
+    contact_email = models.EmailField(blank=True, null=True, verbose_name="Почта")
+    whatsapp = models.CharField(max_length=200, blank=True, null=True, verbose_name="Whatsapp")
+    facebook = models.URLField(max_length=200, blank=True, null=True, verbose_name="Facebook")
+    login = models.CharField(max_length=200, blank=True, null=True, verbose_name="Логин")
+    password = models.CharField(max_length=200, blank=True, null=True, verbose_name="Пароль")
+    discount = models.DecimalField(max_digits=5, decimal_places=2, null=True, verbose_name="Скидка %")
     price_list = models.FileField(
         upload_to=supplier_price_upload_path,
         storage=OverwriteStorage(),
@@ -43,7 +43,7 @@ class Supplier(models.Model):
         blank=True
     )
 
-    updated_at = models.DateTimeField(blank=True, null=True)
+    upt_price_at = models.DateTimeField(blank=True, null=True, verbose_name="Обновление прайса")
 
     def __str__(self):
         return self.name

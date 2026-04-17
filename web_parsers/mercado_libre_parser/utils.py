@@ -2,13 +2,11 @@ from bs4 import BeautifulSoup
 import json
 import os
 import re
-from data_base.tools import add_product
+from data_base.tools import add_product, get_products
 import random
-
-def get_useragents() -> list:
-    with open("user_agents.txt") as f:
-        user_agents = [line.strip() for line in f if line.strip()]
-        return user_agents
+import requests
+from settings import HEADERS
+import time
 
 def get_all_prods_url(soup):
     view_more_url = soup.find('a', id="view-more")['href']
@@ -17,7 +15,6 @@ def get_all_prods_url(soup):
 
 def get_nav_pagination(soup):
     return int(soup.find(attrs={"aria-label": "Paginación"}).find_all('li')[-2].text.strip())
-
 
 
 def get_prods_from_page(soup):
@@ -36,10 +33,12 @@ def get_prods_from_page(soup):
             "url": url,
             "price": price
         }
+
         prods_lst.append(card_dict)
 
     print('______________________')
     return prods_lst
+
 
 def get_sku(link):
     match = re.search(r'MLA\d+', link)

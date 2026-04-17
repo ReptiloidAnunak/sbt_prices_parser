@@ -69,8 +69,10 @@ def save_to_json(prods):
 
 
 def run():
+    if os.path.exists(JSON_FILE):
+        os.remove(JSON_FILE)
+        
     logger.info("Electrogrig parser")
-
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()

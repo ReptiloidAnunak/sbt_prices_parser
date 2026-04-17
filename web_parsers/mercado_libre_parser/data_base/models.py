@@ -39,8 +39,17 @@ class Product(Base):
     name = Column(String)
     price = Column(Float)
     url = Column(String, unique=True)
+    sales = Column(Integer, nullable=True)
+    cat_lvl_1 = Column(String, nullable=True)
+    cat_lvl_2 = Column(String, nullable=True)
+    cat_lvl_3 = Column(String, nullable=True)
+    cat_lvl_4 = Column(String, nullable=True)
+    cat_lvl_5 = Column(String, nullable=True)
+    cat_lvl_6 = Column(String, nullable=True)
+    cat_lvl_7 = Column(String, nullable=True)
+    cat_lvl_8 = Column(String, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
 
     shop = relationship(
         "Shop",

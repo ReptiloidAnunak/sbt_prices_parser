@@ -37,6 +37,7 @@ def enter_duna(page):
     page.goto("https://www.agrupacionduna.com/login")
     page.wait_for_load_state("domcontentloaded")
     sleep_random(2, 4)
+    logger.info('Login Duna: ✅')
 
 
 def close_popup_if_exists(page):
@@ -132,6 +133,9 @@ def save_to_json(prods):
 
 
 def run():
+    if os.path.exists(JSON_FILE):
+        os.remove(JSON_FILE)
+        
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,

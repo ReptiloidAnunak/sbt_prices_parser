@@ -23,6 +23,7 @@ class ProductSupplierInline(admin.TabularInline):
 class ProductAdmin(admin.ModelAdmin):
 
     list_display = (
+        "code_sbt",
         "title_sbt",
         "category",
         "best_price_wholesale",
@@ -81,6 +82,7 @@ class SupplierAdmin(admin.ModelAdmin):
         "contact_email",
         "whatsapp",
         "price_list_link",
+        "upt_price_at"
     )
 
     search_fields = ("name",)

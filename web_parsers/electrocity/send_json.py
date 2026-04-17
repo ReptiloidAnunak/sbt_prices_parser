@@ -3,9 +3,10 @@
 
 import requests
 import json
-
-
+from logger import get_logger
 import os
+
+logger = get_logger()
 
 
 API_URL = os.getenv(
@@ -28,10 +29,7 @@ def send_products_json(file_path, supplier):
 
     response = requests.post(API_URL, json=payload)
 
-    print("Status:", response.status_code)
-    print("Response:", response.text)
+    logger.info("Status:", response.status_code)
+    logger.info("Response:", response.text)
 
     return response
-
-
-send_products_json('electrocity_products.json', 'Electrocity')

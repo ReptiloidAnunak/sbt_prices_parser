@@ -117,40 +117,46 @@ def save_to_json(prods):
 # -----------------------------
 
 def collect_prods(page):
-    page_num = 0
+    try:
+        page_num = 0
 
-    while True:
-        page_num += 1
-        url = f"https://www.ansal.com.ar/search?q=&page={page_num}&viewMode=grid&orderBy=orden%20asc&moneda=ARS"
-        try:
-            page.goto(url)
-            sleep_random(4, 8)
+        while True:
+            page_num += 1
+            url = f"https://www.ansal.com.ar/search?q=&page={page_num}&viewMode=grid&orderBy=orden%20asc&moneda=ARS"
+            try:
+                page.goto(url)
+                sleep_random(4, 8)
 
-            html = page.content()
-            prods = get_prods(html)
+                html = page.content()
+                prods = get_prods(html)
 
-            if not prods:
-                break
+                if not prods:
+                    break
 
-            logger.info(f"Page {page_num}: {len(prods)} products")
-        except (Error, TimeoutError) as e:
-            logger.info(f'\n\n{e}\n\n')
-            time.sleep(20)
-            page.goto(url)
-            sleep_random(5, 10)
+                logger.info(f"Page {page_num}: {len(prods)} products")
+            except (Error, TimeoutError) as e:
+                logger.info(f'\n\n{e}\n\n')
+                time.sleep(20)
+                page.goto(url)
+                sleep_random(5, 10)
 
-            html = page.content()
-            prods = get_prods(html)
+                html = page.content()
+                prods = get_prods(html)
 
-            if not prods:
-                logger.info('No more products')
-                break
+                if not prods:
+                    logger.info('No more products')
+                    break
 
-            logger.info(f"Page {page_num}: {len(prods)} products")
-        finally:
-            save_to_json(prods)
-            sleep_random(5, 10)
-    logger.info('Parsing is finished')
+                logger.info(f"Page {page_num}: {len(prods)} products")
+            finally:
+                save_to_json(prods)
+                sleep_random(5, 10)
+        logger.info('Parsing is finished')
+    except Exception as e:
+        logger.error(e)
+    finally:
+        send_products_json(JSON_FILE, 'Ansal')
+
             
 
 # -----------------------------
@@ -169,7 +175,7 @@ def run():
             collect_prods(page)
         finally:
             browser.close()
-        send_products_json(JSON_FILE, 'Ansal')
+        
 
 if __name__ == "__main__":
     run()

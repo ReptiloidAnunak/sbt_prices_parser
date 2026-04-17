@@ -2,13 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import random
-from settings import DATA_FOLDER
-from utils  import get_useragents, get_prods_from_page, save_prods_db, get_next_btn
+from settings import HEADERS
+from utils  import get_prods_from_page, save_prods_db, get_next_btn
 from data_base.models import Shop, Product
 from data_base.tools import save_prods_to_excel
 from data_base.tools import get_shops
 
-USER_AGENTS = get_useragents()
+
 
 def sleep_random(a=2, b=5):
     time.sleep(random.uniform(a, b))
@@ -28,7 +28,6 @@ def normalize_url(url: str):
     return url
 
 
-
 def parse_ml_shop(shop: Shop):
     session = requests.Session()
     prods_by_page = 0
@@ -38,22 +37,11 @@ def parse_ml_shop(shop: Shop):
         pag_segment = f"_Desde_{prods_by_page}_NoIndex_True"
         shop.url = normalize_url(shop.url)
         pag_link = shop.url + pag_segment
-
-        headers = {
-                    "User-Agent": random.choice(USER_AGENTS),
-                    "Accept-Language": random.choice([
-                        "es-AR,es;q=0.9,en;q=0.8",
-                        "en-US,en;q=0.9",
-                        "es-ES,es;q=0.9,en;q=0.8"
-                    ]),
-                    "Accept": "text/html,application/xhtml+xml",
-                    "Connection": "keep-alive",
-                }
         
         print(f"[INFO] Requesting: {pag_link}")
 
         try:
-            response = session.get(pag_link, headers=headers, timeout=10)
+            response = session.get(pag_link, headers=HEADERS, timeout=15)
 
             if response.status_code != 200:
                 print(f"[WARN] Status code: {response.status_code}")

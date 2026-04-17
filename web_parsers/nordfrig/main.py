@@ -6,6 +6,10 @@ from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 from playwright._impl._errors import TimeoutError
 from dotenv import load_dotenv
+from logger import get_logger
+
+
+logger = get_logger()
 
 def load_login_pwd():
     load_dotenv('.env')
@@ -97,7 +101,7 @@ def save_to_json(prods):
     with open(JSON_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-    print(f"Saved {len(new_data)} new products")
+    logger.info(f"Saved {len(new_data)} new products")
 
 # -----------------------------
 # Pagination
@@ -117,7 +121,7 @@ def collect_all_pages(page, max_pages=100):
     while True:
         current_page += 1
         url = f"https://norfrig.com.ar/productos?page={current_page}"
-        print(f"Page {current_page}")
+        logger.info(f"Page {current_page}")
         
         try:
             page.goto(url)
@@ -143,7 +147,9 @@ def collect_all_pages(page, max_pages=100):
 # Main
 # -----------------------------
 def run():
-    print("Norfrig parser")
+    logger.info("Norfrig parser")
+    if os.path.exists(JSON_FILE):
+        os.remove(JSON_FILE)
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)

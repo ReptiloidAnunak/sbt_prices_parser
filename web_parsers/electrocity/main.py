@@ -5,6 +5,11 @@ import os
 import json
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from settings import JSON_FILE
+from logger import get_logger
+from send_json import send_products_json
+
+logger = get_logger()
 
 def load_login_pwd():
     load_dotenv('.env')
@@ -15,9 +20,6 @@ def load_login_pwd():
 
 
 login_data = load_login_pwd()
-
-
-JSON_FILE = "electrocity_products.json"
 
 
 # =========================
@@ -40,6 +42,7 @@ def login_electrocity(page):
     sleep_random(1, 2)
     page.get_by_role("button", name="Iniciar sesión").click()
     sleep_random(3, 5)
+    logger.info('Login Electrocity: ✅')
 
 
 # =========================
@@ -66,7 +69,7 @@ def append_to_json(products):
     with open(JSON_FILE, "a", encoding="utf-8") as f:
         for p in products:
             f.write(json.dumps(p, ensure_ascii=False) + "\n")
-    print(f"💾 Сохранено: +{len(products)}")
+    logger.info(f"💾 Сохранено: +{len(products)}")
 
 
 # =========================
@@ -124,7 +127,7 @@ def load_and_collect(page, max_rounds=50):
         new_products = parse_products_from_html(html, seen_urls)
         append_to_json(new_products)
 
-        print(f"➕ Новых: {len(new_products)} | Всего: {len(seen_urls)}")
+        logger.info(f"➕ Новых: {len(new_products)} | Всего: {len(seen_urls)}")
 
         clicked = False
 
@@ -158,7 +161,7 @@ def load_and_collect(page, max_rounds=50):
             button = page.locator('a:has-text("Mostrar más productos")')
 
             if button.count() == 0 or not button.is_visible():
-                print("✅ Конец страницы")
+                logger.info("✅ Конец страницы")
 
                 # =========================
                 # 🔥 ФИНАЛЬНЫЙ СБОР
@@ -167,7 +170,7 @@ def load_and_collect(page, max_rounds=50):
                 html = page.content()
                 final_products = parse_products_from_html(html, seen_urls)
                 append_to_json(final_products)
-                print(f"🏁 Финально добавлено: {len(final_products)} | Итого: {len(seen_urls)}")
+                logger.info(f"🏁 Финально добавлено: {len(final_products)} | Итого: {len(seen_urls)}")
                 break
 
 
@@ -175,7 +178,7 @@ def load_and_collect(page, max_rounds=50):
 # MAIN
 # =========================
 def run():
-    print("🚀 Electrocity parser (BS version)")
+    logger.info("🚀 Electrocity parser")
 
     if os.path.exists(JSON_FILE):
         os.remove(JSON_FILE)
@@ -190,6 +193,7 @@ def run():
         load_and_collect(page)
         browser.close()
 
+    send_products_json(JSON_FILE, 'Electrocity')
 
 if __name__ == "__main__":
     run()
