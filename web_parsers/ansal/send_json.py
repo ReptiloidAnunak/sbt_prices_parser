@@ -28,3 +28,7 @@ def send_products_json(file_path, supplier):
     logger.info(f"Response: {response.text}",)
     return response
 
+
+
+if __name__ == "__main__":
+    send_products_json()

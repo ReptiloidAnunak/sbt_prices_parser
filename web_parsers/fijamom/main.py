@@ -8,6 +8,7 @@ import json
 from dotenv import load_dotenv
 from logger import get_logger
 from settings import JSON_FILE
+from send_json import send_products_json
 
 
 logger = get_logger()
@@ -144,6 +145,8 @@ def run():
 
         finally:
             browser.close()
+
+    send_products_json(JSON_FILE, "Fijamom")
 
 if __name__ == "__main__":
     run()

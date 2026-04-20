@@ -4,13 +4,14 @@
 import requests
 import json
 import os
-from settings import JSON_FILE
+from logger import get_logger
 
 API_URL = os.getenv(
     "API_URL",
     "http://host.docker.internal:8010/api/products/import/"
 )
 
+logger = get_logger()
 
 def send_products_json(file_path, supplier):
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -20,9 +21,6 @@ def send_products_json(file_path, supplier):
         "products": products
     }
     response = requests.post(API_URL, json=payload)
-    print("Status:", response.status_code)
-    print("Response:", response.text)
+    logger.info("Status:", response.status_code)
+    logger.info("Response:", response.text)
     return response
-
-
-send_products_json(JSON_FILE, 'Fijamom')

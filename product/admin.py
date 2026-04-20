@@ -26,6 +26,7 @@ class ProductAdmin(admin.ModelAdmin):
         "code_sbt",
         "title_sbt",
         "category",
+        "price_sbt",
         "best_price_wholesale",
         "best_price_retail",
     )

@@ -1,27 +1,29 @@
 #!/bin/bash
 
 BASE_DIR="web_parsers"
+MAX_JOBS=3
+
+running=0
 
 for dir in "$BASE_DIR"/*/; do
-    if [ -d "$dir" ]; then
-        echo "Обрабатываю $dir"
+    (
+        echo "🚀 $dir"
+        cd "$dir" || exit
 
-        cd "$dir" || continue
+        source .venv/bin/activate 2>/dev/null
 
-        if [ -f ".venv/bin/activate" ]; then
-            source .venv/bin/activate
-
-            if [ -f "send_json.py" ]; then
-                python3 -m send_json
-            else
-                echo "⚠️ Нет send_json.py"
-            fi
-
-            deactivate
-        else
-            echo "Нет виртуального окружения"
+        if [ -f "run_docker.sh" ]; then
+            ./run_docker.sh
         fi
+    ) &
 
-        cd - > /dev/null
+    ((running++))
+
+    if [ "$running" -ge "$MAX_JOBS" ]; then
+        wait -n  # ждём один процесс
+        ((running--))
     fi
 done
+
+wait
+echo "✅ Всё завершено"

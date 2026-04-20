@@ -23,9 +23,11 @@ class Product(models.Model):
         verbose_name="Категория"
     )
 
-    code_sbt = models.IntegerField(null=True, verbose_name="Код СБТ")
+    code_sbt = models.IntegerField(null=True, blank=True, verbose_name="Код СБТ")
 
     title_sbt = models.CharField(max_length=255, verbose_name="Название СБТ")
+    
+    price_sbt = models.IntegerField(verbose_name="Цена СБТ", null=True, blank=True)
 
     suppliers = models.ManyToManyField(
         Supplier,
