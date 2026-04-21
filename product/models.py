@@ -25,9 +25,7 @@ class Product(models.Model):
     )
 
     code_sbt = models.IntegerField(null=True, blank=True, verbose_name="Код СБТ")
-
     title_sbt = models.CharField(max_length=255, verbose_name="Название СБТ", unique=True)
-
     price_sbt = models.IntegerField(verbose_name="Цена СБТ", null=True, blank=True)
 
     suppliers = models.ManyToManyField(
@@ -91,9 +89,7 @@ class ProductSupplier(models.Model):
         verbose_name="Оптовая цена"
     )
 
-    iva_in_price = models.BooleanField(
-        default=False
-    )
+    iva_in_price = models.BooleanField(default=False)
 
     price_retail = models.DecimalField(
         max_digits=10,
@@ -111,9 +107,21 @@ class ProductSupplier(models.Model):
 
         price = Decimal(str(self.price_wholesale))
 
-        # Если у поставщика IVA не включен, добавляем 21%
+        # 1. Если IVA не включён в цену поставщика — добавляем 21%
         if self.supplier and not self.supplier.iva_in_price:
             price = price * Decimal("1.21")
+
+        # 2. Если есть скидка поставщика — вычитаем её
+        if self.supplier and self.supplier.discount is not None:
+            discount = Decimal(str(self.supplier.discount))
+
+            # если в базе хранится 0.25 для 25%
+            multiplier = Decimal("1.00") - discount
+
+            if multiplier < 0:
+                multiplier = Decimal("0.00")
+
+            price = price * multiplier
 
         return price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
