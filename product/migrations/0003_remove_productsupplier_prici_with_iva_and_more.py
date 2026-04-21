@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='productsupplier',
-            name='price_with_iva',
+            name='iva_in_price',
             field=models.BooleanField(default=False),
         ),
     ]

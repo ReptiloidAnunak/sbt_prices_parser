@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal, ROUND_HALF_UP
 from django.db import models
 from supplier.models import Supplier
 from api_server.settings import CATEGORIES_FILE
@@ -25,8 +26,8 @@ class Product(models.Model):
 
     code_sbt = models.IntegerField(null=True, blank=True, verbose_name="Код СБТ")
 
-    title_sbt = models.CharField(max_length=255, verbose_name="Название СБТ")
-    
+    title_sbt = models.CharField(max_length=255, verbose_name="Название СБТ", unique=True)
+
     price_sbt = models.IntegerField(verbose_name="Цена СБТ", null=True, blank=True)
 
     suppliers = models.ManyToManyField(
@@ -41,8 +42,8 @@ class Product(models.Model):
         return self.title_sbt
 
     def best_price_wholesale(self):
-        price = self.product_suppliers.order_by("price_wholesale").first()
-        return price.price_wholesale if price else None
+        price = self.product_suppliers.order_by("price_wholesale_final").first()
+        return price.price_wholesale_final if price else None
 
     def best_price_retail(self):
         price = self.product_suppliers.order_by("price_retail").first()
@@ -55,7 +56,7 @@ class ProductSupplier(models.Model):
         verbose_name = "Цена поставщика"
         verbose_name_plural = "Цены поставщиков"
         unique_together = ("product", "supplier")
-        ordering = ["price_wholesale"]
+        ordering = ["price_wholesale_final"]
 
     product = models.ForeignKey(
         Product,
@@ -70,7 +71,7 @@ class ProductSupplier(models.Model):
         related_name="supplier_products",
         verbose_name="Поставщик"
     )
-    
+
     supplier_prod_code = models.CharField(max_length=255, verbose_name="Код тов. поставщика")
     supplier_prod_title = models.CharField(max_length=255, verbose_name="Название тов. поставщика")
 
@@ -79,10 +80,18 @@ class ProductSupplier(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
+        verbose_name="Оптовая цена из прайса"
+    )
+
+    price_wholesale_final = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
         verbose_name="Оптовая цена"
     )
 
-    price_with_iva = models.BooleanField(
+    iva_in_price = models.BooleanField(
         default=False
     )
 
@@ -96,5 +105,21 @@ class ProductSupplier(models.Model):
 
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Время обновления')
 
+    def calculate_price_wholesale_final(self):
+        if self.price_wholesale is None:
+            return None
+
+        price = Decimal(str(self.price_wholesale))
+
+        # Если у поставщика IVA не включен, добавляем 21%
+        if self.supplier and not self.supplier.iva_in_price:
+            price = price * Decimal("1.21")
+
+        return price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    def save(self, *args, **kwargs):
+        self.price_wholesale_final = self.calculate_price_wholesale_final()
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.product} - {self.supplier} (W:{self.price_wholesale} R:{self.price_retail})"
+        return f"{self.product} - {self.supplier} (W:{self.price_wholesale_final} R:{self.price_retail})"

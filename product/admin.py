@@ -1,8 +1,10 @@
 from django.contrib import admin, messages
+from django.utils.html import format_html
+
 from .models import Product, ProductSupplier
 from supplier.models import Supplier
-from .forms import SupplierAdminForm 
-from django.utils.html import format_html
+from .forms import SupplierAdminForm
+
 
 class ProductSupplierInline(admin.TabularInline):
     model = ProductSupplier
@@ -12,16 +14,43 @@ class ProductSupplierInline(admin.TabularInline):
         "supplier",
         "supplier_prod_code",
         "supplier_prod_title",
+        "product_price_sbt",
         "price_wholesale",
+        "price_wholesale_final",
         "price_retail",
+        "supplier_iva_in_price",
+        "supplier_discount_percent",
         "updated_at",
     )
-    readonly_fields = ("updated_at",)
+    readonly_fields = (
+        "product_price_sbt",
+        "updated_at",
+        "supplier_iva_in_price",
+        "supplier_discount_percent",
+    )
+
+    def product_price_sbt(self, obj):
+        if not obj or not obj.product_id:
+            return "-"
+        return obj.product.price_sbt
+    product_price_sbt.short_description = "Цена СБТ"
+
+    def supplier_iva_in_price(self, obj):
+        if not obj or not obj.supplier_id:
+            return None
+        return obj.supplier.iva_in_price
+    supplier_iva_in_price.short_description = "IVA в цене"
+    supplier_iva_in_price.boolean = True
+
+    def supplier_discount_percent(self, obj):
+        if not obj or not obj.supplier_id or obj.supplier.discount is None:
+            return "-"
+        return f"{obj.supplier.discount * 100:g}"
+    supplier_discount_percent.short_description = "Скидка %"
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-
     list_display = (
         "code_sbt",
         "title_sbt",
@@ -48,12 +77,15 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductSupplier)
 class ProductSupplierAdmin(admin.ModelAdmin):
-
     list_display = (
         "product",
+        "product_price_sbt",
         "supplier",
         "price_wholesale",
+        "price_wholesale_final",
         "price_retail",
+        "supplier_iva_in_price",
+        "supplier_discount_percent",
         "updated_at",
     )
 
@@ -72,6 +104,25 @@ class ProductSupplierAdmin(admin.ModelAdmin):
         "supplier",
     )
 
+    def product_price_sbt(self, obj):
+        if not obj or not obj.product_id:
+            return "-"
+        return obj.product.price_sbt
+    product_price_sbt.short_description = "Цена СБТ"
+
+    def supplier_iva_in_price(self, obj):
+        if not obj or not obj.supplier_id:
+            return None
+        return obj.supplier.iva_in_price
+    supplier_iva_in_price.short_description = "IVA в цене"
+    supplier_iva_in_price.boolean = True
+
+    def supplier_discount_percent(self, obj):
+        if not obj or not obj.supplier_id or obj.supplier.discount is None:
+            return "-"
+        return f"{obj.supplier.discount * 100:g}"
+    supplier_discount_percent.short_description = "Скидка %"
+
 
 @admin.register(Supplier)
 class SupplierAdmin(admin.ModelAdmin):
@@ -83,7 +134,9 @@ class SupplierAdmin(admin.ModelAdmin):
         "contact_email",
         "whatsapp",
         "price_list_link",
-        "upt_price_at"
+        "iva_in_price",
+        "discount_percent",
+        "upt_price_at",
     )
 
     search_fields = ("name",)
@@ -101,18 +154,21 @@ class SupplierAdmin(admin.ModelAdmin):
                 url
             )
         return "-"
-
     price_list_link.short_description = "Прайс"
 
+    def discount_percent(self, obj):
+        if obj.discount is None:
+            return "-"
+        return f"{obj.discount * 100:g}"
+    discount_percent.short_description = "Скидка %"
+
     def save_model(self, request, obj, form, change):
-        if obj.website and str(obj.website).lower() == 'nan':
+        if obj.website and str(obj.website).lower() == "nan":
             obj.website = None
 
         super().save_model(request, obj, form, change)
 
         if obj.price_list:
-            # process_price_list.delay(obj.id)  # 🔥 запуск Celery
-
             self.message_user(
                 request,
                 "Файл загружен и отправлен в обработку 🚀",

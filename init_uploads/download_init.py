@@ -3,7 +3,7 @@ import sys
 import re
 import django
 import pandas as pd
-
+import math
 from django.db.utils import IntegrityError
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -14,12 +14,16 @@ django.setup()
 
 from supplier.models import Supplier
 from product.models import Product, ProductSupplier
+import logging
 
+logger = logging.getLogger(__name__)
 
 # -------------------- CONFIG --------------------
 
-SUPPLIERS_FILE = "init_uploads/download_files/Копия Список поставщиков.xlsx"
-PRODUCTS_FILE = "init_uploads/download_files/result_with_duna_unique.xlsx"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+SUPPLIERS_FILE = os.path.join(BASE_DIR, "download_files", "Копия Список поставщиков.xlsx")
+PRODUCTS_FILE = os.path.join(BASE_DIR, "result_with_electrocity_unique.xlsx")
 SUPPLIER_LINKS_FILE = PRODUCTS_FILE
 
 
@@ -121,6 +125,8 @@ def load_suppliers():
     for row in df.to_dict(orient="records"):
         name = row.get("Название")
         site = row.get("Сайт")
+        discount = row.get('Скидка %')
+        iva = row.get('IVA')
 
         if pd.isna(name):
             continue
@@ -139,11 +145,22 @@ def load_suppliers():
                 site = "https://" + site
 
         print(name, site)
+        if not pd.isna(iva):
+            iva = True
+        else:
+            iva = False
+
+        if not pd.isna(discount):
+            discount = float(discount)
+        else:
+            discount = None
 
         try:
             Supplier.objects.create(
                 name=name,
-                website=site
+                website=site,
+                discount=discount,
+                iva_in_price = iva
             )
         except IntegrityError:
             print(f"Supplier already exists: {name}")
@@ -151,6 +168,11 @@ def load_suppliers():
 
 
 # -------------------- PRODUCTS --------------------
+
+def fix_nan(value):
+    if isinstance(value, float) and math.isnan(value):
+        return None
+    return value
 
 def import_products_from_excel():
     df = pd.read_excel(PRODUCTS_FILE, header=0)
@@ -166,11 +188,15 @@ def import_products_from_excel():
     valid_categories = {c for c, _ in Product._meta.get_field("category").choices}
     normalized_valid = {clean_category(c): c for c in valid_categories}
 
-    products_to_create = []
+    created_count = 0
+    updated_count = 0
 
     for row in df.to_dict(orient="records"):
         code_sbt = clean_int(row.get("Код [KOD]"))
-        price = row.get('Цена "Розница AR"')
+        price = fix_nan(row.get('Цена "Розница AR"'))
+        if price is not None:
+            price = int(price)
+
         title = str(row.get("Наименование", "")).strip()
         raw_category = str(row.get("Категория товара", "")).strip()
 
@@ -185,25 +211,42 @@ def import_products_from_excel():
 
         category = normalized_valid[norm_category]
 
-        products_to_create.append(
-            Product(
-                code_sbt=code_sbt,
-                category=category,
-                title_sbt=title,
-                price_sbt=price,
-            )
+        obj, created = Product.objects.get_or_create(
+            title_sbt=title,
+            defaults={
+                "code_sbt": code_sbt,
+                "category": category,
+                "price_sbt": price,
+            }
         )
 
-    unique_products = {}
-    for p in products_to_create:
-        unique_products[p.title_sbt] = p
+        if created:
+            created_count += 1
+            print(f"✅ CREATED: {obj.title_sbt} | price={obj.price_sbt}")
+        else:
+            changed = False
 
-    products = list(unique_products.values())
+            if code_sbt is not None and obj.code_sbt != code_sbt:
+                obj.code_sbt = code_sbt
+                changed = True
 
-    Product.objects.bulk_create(products, ignore_conflicts=True)
+            if obj.category != category:
+                obj.category = category
+                changed = True
 
-    print(f"✅ Загружено товаров: {len(products)}")
+            if price is not None and obj.price_sbt != price:
+                obj.price_sbt = price
+                changed = True
 
+            if changed:
+                obj.save()
+                updated_count += 1
+
+            print(f"🔄 UPDATED: {obj.title_sbt} | price={obj.price_sbt}")
+
+    print(f"✅ Products created: {created_count}")
+    print(f"✅ Products updated: {updated_count}")
+    print(f"✅ Total products in DB: {Product.objects.count()}")
 
 # -------------------- UNIVERSAL SUPPLIER LINKS --------------------
 

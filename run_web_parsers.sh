@@ -20,7 +20,7 @@ for dir in "$BASE_DIR"/*/; do
     ((running++))
 
     if [ "$running" -ge "$MAX_JOBS" ]; then
-        wait -n  # ждём один процесс
+        wait
         ((running--))
     fi
 done

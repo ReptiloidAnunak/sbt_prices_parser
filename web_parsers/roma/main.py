@@ -1,6 +1,6 @@
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
-from settings import JSON_FILE
+from settings import JSON_FILE, SUPPLIER_NAME
 import time
 import random
 import json
@@ -164,7 +164,7 @@ def run():
 
         finally:
             browser.close()
-            send_products_json(JSON_FILE, 'Roma Repuestos insumos')
+            send_products_json(JSON_FILE, SUPPLIER_NAME)
 
 if __name__ == "__main__":
     run()
