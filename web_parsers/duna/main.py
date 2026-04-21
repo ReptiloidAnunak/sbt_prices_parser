@@ -8,7 +8,7 @@ import json
 from dotenv import load_dotenv
 from logger import get_logger
 from send_json import send_products_json
-from settings import JSON_FILE
+from settings import JSON_FILE, SUPPLIER_NAME
 
 logger = get_logger()
 
@@ -162,7 +162,7 @@ def run():
             save_to_json(cards)
             browser.close()
 
-    send_products_json(JSON_FILE, 'Duna')
+    send_products_json(JSON_FILE, SUPPLIER_NAME)
 
 
 if __name__ == "__main__":

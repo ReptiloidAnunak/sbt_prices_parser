@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from playwright._impl._errors import TimeoutError
 from dotenv import load_dotenv
 from logger import get_logger
-
+from settings import JSON_FILE
 
 logger = get_logger()
 
@@ -20,8 +20,6 @@ def load_login_pwd():
 
 
 login_data = load_login_pwd()
-
-JSON_FILE = "norfrig_products.json"
 
 # -----------------------------
 # Utils
