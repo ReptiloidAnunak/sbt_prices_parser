@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  ansal_parser:
+  nordfrig_parser:
     build: .
     container_name: nordfrig_parser
 

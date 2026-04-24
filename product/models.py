@@ -14,9 +14,9 @@ CATEGORY_CHOICES = [(c, c) for c in categories]
 class Product(models.Model):
 
     class Meta:
-        verbose_name = 'Товар'
-        verbose_name_plural = 'Товары'
-        ordering = ['title_sbt']
+        verbose_name = "Товар"
+        verbose_name_plural = "Товары"
+        ordering = ["title_sbt"]
 
     category = models.CharField(
         max_length=255,
@@ -24,9 +24,23 @@ class Product(models.Model):
         verbose_name="Категория"
     )
 
-    code_sbt = models.IntegerField(null=True, blank=True, verbose_name="Код СБТ")
-    title_sbt = models.CharField(max_length=255, verbose_name="Название СБТ", unique=True)
-    price_sbt = models.IntegerField(verbose_name="Цена СБТ", null=True, blank=True)
+    code_sbt = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Код СБТ"
+    )
+
+    title_sbt = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name="Название СБТ"
+    )
+
+    price_sbt = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Цена СБТ"
+    )
 
     suppliers = models.ManyToManyField(
         Supplier,
@@ -70,15 +84,22 @@ class ProductSupplier(models.Model):
         verbose_name="Поставщик"
     )
 
-    supplier_prod_code = models.CharField(max_length=255, verbose_name="Код тов. поставщика")
-    supplier_prod_title = models.CharField(max_length=255, verbose_name="Название тов. поставщика")
+    supplier_prod_code = models.CharField(
+        max_length=255,
+        verbose_name="Код тов. поставщика"
+    )
+
+    supplier_prod_title = models.CharField(
+        max_length=255,
+        verbose_name="Название тов. поставщика"
+    )
 
     price_wholesale = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name="Оптовая цена из прайса"
+        verbose_name="Оптовая ориг. цена из прайса"
     )
 
     price_wholesale_final = models.DecimalField(
@@ -86,10 +107,8 @@ class ProductSupplier(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name="Оптовая цена"
+        verbose_name="Оптовая финальная цена"
     )
-
-    iva_in_price = models.BooleanField(default=False)
 
     price_retail = models.DecimalField(
         max_digits=10,
@@ -99,29 +118,34 @@ class ProductSupplier(models.Model):
         verbose_name="Розничная цена"
     )
 
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Время обновления')
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Время обновления"
+    )
 
     def calculate_price_wholesale_final(self):
         if self.price_wholesale is None:
             return None
 
-        price = Decimal(str(self.price_wholesale))
+        base_price = Decimal(str(self.price_wholesale))
+        price = base_price
 
-        # 1. Если IVA не включён в цену поставщика — добавляем 21%
-        if self.supplier and not self.supplier.iva_in_price:
-            price = price * Decimal("1.21")
+        if self.supplier:
+            if not self.supplier.iva_in_price:
+                price += base_price * Decimal("0.21")
 
-        # 2. Если есть скидка поставщика — вычитаем её
-        if self.supplier and self.supplier.discount is not None:
-            discount = Decimal(str(self.supplier.discount))
+            if not self.supplier.ib_caba_in_prise:
+                price += base_price * Decimal("0.03")
 
-            # если в базе хранится 0.25 для 25%
-            multiplier = Decimal("1.00") - discount
+            if self.supplier.discount is not None:
+                discount = Decimal(str(self.supplier.discount))
 
-            if multiplier < 0:
-                multiplier = Decimal("0.00")
+                if discount < Decimal("0"):
+                    discount = Decimal("0")
+                elif discount > Decimal("100"):
+                    discount = Decimal("100")
 
-            price = price * multiplier
+                price -= price * (discount / Decimal("100"))
 
         return price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 

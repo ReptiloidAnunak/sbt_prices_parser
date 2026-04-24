@@ -1,8 +1,11 @@
 import pandas as pd
+from decimal import Decimal, InvalidOperation
 from supplier.files_parsing.base import BaseParser
 
 
 class FluorgazParser(BaseParser):
+    def __init__(self, supplier=None):
+        self.supplier = supplier
 
     def parse(self, file_path):
         df_raw = pd.read_excel(file_path, header=None)
@@ -10,18 +13,29 @@ class FluorgazParser(BaseParser):
         header_row = self._find_header_row(df_raw)
         df = pd.read_excel(file_path, header=header_row)
 
-        df.columns = df.columns.astype(str).str.strip()
+        df.columns = [str(col).strip() for col in df.columns]
 
         col_product = "PRODUCTO"
         col_price = "PRECIO USD X UNIDAD"
 
         df = df[[col_product, col_price]]
-
         df = df.dropna(subset=[col_product, col_price])
 
-        df[col_price] = self._clean_price(df[col_price])
+        result = []
 
-        result = self._build_result(df, col_product, col_price)
+        for _, row in df.iterrows():
+            product = self._clean_value(row.get(col_product))
+            price = self._clean_decimal(row.get(col_price))
+
+            if not product or product == "...":
+                continue
+
+            result.append({
+                "code": None,
+                "title": product,
+                "price": price,
+                "currency": self._get_currency(default="USD"),
+            })
 
         return result
 
@@ -32,29 +46,32 @@ class FluorgazParser(BaseParser):
                 return i
         raise ValueError("Не найдена строка заголовков")
 
-    def _clean_price(self, series):
-        return (
-            series
-            .astype(str)
-            .str.replace(',', '.', regex=False)
-            .pipe(pd.to_numeric, errors='coerce')
-        )
+    def _clean_value(self, value):
+        if pd.isna(value):
+            return None
 
-    def _build_result(self, df, col_product, col_price):
-        result = []
+        value = str(value).strip()
+        if not value or value.lower() in {"nan", "none", "null"}:
+            return None
 
-        for _, row in df.iterrows():
-            product = str(row[col_product]).strip()
-            price = row[col_price]
+        return value
 
-            if not product or product == '...':
-                continue
+    def _clean_decimal(self, value):
+        if pd.isna(value):
+            return None
 
-            result.append({
-                "code": None,  # ⚠️ нет кода — оставляем None
-                "title": product,
-                "price": price,
-                "currency": "USD",
-            })
+        value = str(value).strip()
+        if not value or value.lower() in {"nan", "none", "null"}:
+            return None
 
-        return result
+        value = value.replace("$", "").replace(",", ".").strip()
+
+        try:
+            return Decimal(value)
+        except (InvalidOperation, ValueError):
+            return None
+
+    def _get_currency(self, default="ARS"):
+        if self.supplier and getattr(self.supplier, "currency", None):
+            return self.supplier.currency
+        return default

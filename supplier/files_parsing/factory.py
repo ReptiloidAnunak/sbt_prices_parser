@@ -20,21 +20,15 @@ PARSERS = {
     "reld": ReldParser,
     "uriarte": UriarteParser,
     "distribuidora_jc": JcParser,
-    "casa_jarse": CasaJarseParser
+    "casa_jarse": CasaJarseParser,
 }
 
 
 def get_parser(supplier):
     key = supplier.name.lower().strip().replace(" ", "_")
-
     parser_class = PARSERS.get(key)
 
     if not parser_class:
-        
-        try:
-            parser_class = PARSERS.get(key.lower())
-        except ValueError:
-            print(f"Нет парсера для поставщика: {key}")
-            
+        raise ValueError(f"Нет парсера для поставщика: {supplier.name} (key={key})")
 
-    return parser_class()
+    return parser_class(supplier=supplier)

@@ -14,6 +14,8 @@ django.setup()
 
 from supplier.models import Supplier
 from product.models import Product, ProductSupplier
+from mercado_libre.models import MercadoLibreShop
+from options.models import Options
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,8 +25,9 @@ logger = logging.getLogger(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 SUPPLIERS_FILE = os.path.join(BASE_DIR, "download_files", "Копия Список поставщиков.xlsx")
-PRODUCTS_FILE = os.path.join(BASE_DIR, "result_with_electrocity_unique.xlsx")
+PRODUCTS_FILE = os.path.join(BASE_DIR, "result_with_electrofrig_unique.xlsx")
 SUPPLIER_LINKS_FILE = PRODUCTS_FILE
+MERCADO_SHOPS_FILE = os.path.join(BASE_DIR, "download_files", "mercado_shops.xlsx")
 
 
 # -------------------- HELPERS --------------------
@@ -104,6 +107,29 @@ def clean_title(value):
     return value
 
 
+def clean_value(value):
+    if pd.isna(value):
+        return None
+
+    value = str(value).strip()
+
+    if not value or value.lower() == "nan":
+        return None
+
+    return value
+
+
+def clean_link(value):
+    value = clean_value(value)
+    if not value:
+        return None
+
+    if not value.startswith(("http://", "https://")):
+        value = "https://" + value
+
+    return value
+
+
 def get_existing_products_map():
     return {
         p.title_sbt: p
@@ -125,8 +151,9 @@ def load_suppliers():
     for row in df.to_dict(orient="records"):
         name = row.get("Название")
         site = row.get("Сайт")
-        discount = row.get('Скидка %')
-        iva = row.get('IVA')
+        discount = row.get("Скидка %")
+        iva = row.get("IVA")
+        currency = row.get("Валюта")  # или "Currency" — как называется колонка у тебя в Excel
 
         if pd.isna(name):
             continue
@@ -144,28 +171,29 @@ def load_suppliers():
             elif not site.startswith(("http://", "https://")):
                 site = "https://" + site
 
-        print(name, site)
-        if not pd.isna(iva):
-            iva = True
-        else:
-            iva = False
+        iva = not pd.isna(iva)
 
         if not pd.isna(discount):
             discount = float(discount)
         else:
             discount = None
 
-        try:
-            Supplier.objects.create(
-                name=name,
-                website=site,
-                discount=discount,
-                iva_in_price = iva
-            )
-        except IntegrityError:
-            print(f"Supplier already exists: {name}")
-            continue
+        if pd.isna(currency):
+            currency = "ARS"
+        else:
+            currency = str(currency).strip().upper()
+            if currency not in ["ARS", "USD"]:
+                currency = "ARS"
 
+        Supplier.objects.update_or_create(
+            name=name,
+            defaults={
+                "website": site,
+                "discount": discount,
+                "iva_in_price": iva,
+                "currency": currency,
+            }
+        )
 
 # -------------------- PRODUCTS --------------------
 
@@ -173,6 +201,7 @@ def fix_nan(value):
     if isinstance(value, float) and math.isnan(value):
         return None
     return value
+
 
 def import_products_from_excel():
     df = pd.read_excel(PRODUCTS_FILE, header=0)
@@ -248,6 +277,7 @@ def import_products_from_excel():
     print(f"✅ Products updated: {updated_count}")
     print(f"✅ Total products in DB: {Product.objects.count()}")
 
+
 # -------------------- UNIVERSAL SUPPLIER LINKS --------------------
 
 def build_supplier_lookup():
@@ -263,7 +293,6 @@ def build_supplier_lookup():
         normalized = normalize_supplier_name(supplier.name)
         lookup[normalized] = supplier
 
-    # ручные алиасы для известных отличий имени поставщика и префикса колонок
     alias_map = {
         "duna": ["duna", "duna srl"],
         "fijamom": ["fijamom"],
@@ -310,7 +339,6 @@ def build_supplier_lookup():
         if found_supplier:
             resolved_lookup[canonical] = found_supplier
 
-    # плюс все реальные поставщики напрямую
     for normalized_name, supplier in lookup.items():
         resolved_lookup.setdefault(normalized_name, supplier)
 
@@ -347,7 +375,6 @@ def resolve_supplier_by_prefix(prefix: str, supplier_lookup: dict):
     if normalized_prefix in supplier_lookup:
         return supplier_lookup[normalized_prefix]
 
-    # второй шанс: частичное совпадение
     for key, supplier in supplier_lookup.items():
         if key == normalized_prefix:
             return supplier
@@ -399,21 +426,17 @@ def load_prods_suppliers_codes_titles():
             supplier_code = clean_code(row.get(code_col)) if code_col in df.columns else None
             supplier_title = clean_title(row.get(title_col)) if title_col in df.columns else None
 
-            # если нет ни кода, ни названия — пропускаем
             if not supplier_code and not supplier_title:
                 continue
 
             defaults = {}
 
-            # если код есть — записываем код
             if supplier_code:
                 defaults["supplier_prod_code"] = supplier_code
 
-            # если в модели есть поле названия поставщика — тоже записываем
             if supplier_title and "supplier_prod_title" in ps_fields:
                 defaults["supplier_prod_title"] = supplier_title
 
-            # если defaults пустой, смысла update_or_create нет
             if not defaults:
                 continue
 
@@ -428,12 +451,64 @@ def load_prods_suppliers_codes_titles():
     print(f"✅ Импорт связей завершён. Создано/обновлено: {created_or_updated}")
 
 
+# -------------------- MERCADO LIBRE SHOPS --------------------
+
+def load_mercado_libre_shops():
+    df = pd.read_excel(MERCADO_SHOPS_FILE)
+    df.columns = [str(c).strip() for c in df.columns]
+    df = df.dropna(how="all")
+
+    print("📊 MercadoLibre колонки:", df.columns.tolist())
+
+    if "Nombre" not in df.columns or "Link" not in df.columns:
+        print("❌ В файле нет нужных колонок (Nombre / Link)")
+        return
+
+    created_count = 0
+    updated_count = 0
+    seen_names = {}
+
+    for row in df.to_dict(orient="records"):
+        name = clean_value(row.get("Nombre"))
+        ml_page = clean_link(row.get("Link"))
+
+        if not name:
+            continue
+
+        if name in seen_names and seen_names[name] != ml_page:
+            print(f"⚠️ Дубль магазина: {name}")
+            print(f"   Было: {seen_names[name]}")
+            print(f"   Стало: {ml_page}")
+
+        seen_names[name] = ml_page
+
+        obj, created = MercadoLibreShop.objects.update_or_create(
+            name=name,
+            defaults={
+                "ml_page": ml_page,
+            }
+        )
+
+        if created:
+            created_count += 1
+            print(f"✅ ML CREATED: {obj.name} | {obj.ml_page}")
+        else:
+            updated_count += 1
+            print(f"🔄 ML UPDATED: {obj.name} | {obj.ml_page}")
+
+    print(f"✅ MercadoLibreShop created: {created_count}")
+    print(f"✅ MercadoLibreShop updated: {updated_count}")
+    print(f"✅ Total MercadoLibreShop in DB: {MercadoLibreShop.objects.count()}")
+
+
 # -------------------- RUN --------------------
 
 def run():
+    Options.load()
     load_suppliers()
     import_products_from_excel()
     load_prods_suppliers_codes_titles()
+    load_mercado_libre_shops()
 
 
 run()

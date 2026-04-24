@@ -1,11 +1,15 @@
 import pandas as pd
+from decimal import Decimal, InvalidOperation
 from supplier.files_parsing.base import BaseParser
 
 
 class BelliniParser(BaseParser):
+    def __init__(self, supplier=None):
+        self.supplier = supplier
 
     def parse(self, file_path):
-        print('\n\nBelliniParser\n\n')
+        print("\n\nBelliniParser\n\n")
+
         df_raw = pd.read_excel(file_path, header=None)
 
         header_row = self._find_header_row(df_raw)
@@ -18,47 +22,60 @@ class BelliniParser(BaseParser):
         col_price = "PESOS + IVA"
 
         df = df[[col_code, col_desc, col_price]]
-
         df = df.dropna(subset=[col_code, col_desc])
 
-        df[col_price] = self._clean_price(df[col_price])
+        result = []
 
-        result = self._build_result(df, col_code, col_desc, col_price)
+        for _, row in df.iterrows():
+            code = self._clean_value(row.get(col_code))
+            desc = self._clean_value(row.get(col_desc))
+            price = self._clean_decimal(row.get(col_price))
+
+            if not desc or desc == "...":
+                continue
+
+            result.append({
+                "code": str(code).strip() if code else None,
+                "title": str(desc).strip() if desc else "",
+                "price": price,
+                "currency": self._get_currency(),
+            })
 
         return result
 
     def _find_header_row(self, df):
         for i, row in df.iterrows():
             row_str = row.astype(str)
-            if row_str.str.contains('Cód. Artículo', case=False).any():
+            if row_str.str.contains("Cód. Artículo", case=False).any():
                 return i
         raise ValueError("Не найдена строка заголовков")
 
-    def _clean_price(self, series):
-        return (
-            series
-            .astype(str)
-            .str.replace('.', '', regex=False)
-            .str.replace(',', '.', regex=False)
-            .pipe(pd.to_numeric, errors='coerce')
-        )
+    def _clean_value(self, value):
+        if pd.isna(value):
+            return None
 
-    def _build_result(self, df, col_code, col_desc, col_price):
-        result = []
+        value = str(value).strip()
+        if not value or value.lower() in {"nan", "none", "null"}:
+            return None
 
-        for _, row in df.iterrows():
-            code = str(row[col_code]).strip()
-            desc = str(row[col_desc]).strip()
-            price = row[col_price]
+        return value
 
-            if not desc or desc == '...':
-                continue
+    def _clean_decimal(self, value):
+        if pd.isna(value):
+            return None
 
-            result.append({
-                "code": code,
-                "title": desc,
-                "price": price,
-                "currency": "ARS",
-            })
+        value = str(value).strip()
+        if not value or value.lower() in {"nan", "none", "null"}:
+            return None
 
-        return result
+        value = value.replace(".", "").replace(",", ".").replace("$", "").strip()
+
+        try:
+            return Decimal(value)
+        except (InvalidOperation, ValueError):
+            return None
+
+    def _get_currency(self):
+        if self.supplier and getattr(self.supplier, "currency", None):
+            return self.supplier.currency
+        return "ARS"

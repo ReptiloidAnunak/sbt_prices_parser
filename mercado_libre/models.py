@@ -74,7 +74,7 @@ class MercadoLibreProduct(models.Model):
         verbose_name = "Товар Mercado Libre"
         verbose_name_plural = "Товары Mercado Libre"
         unique_together = ("product", "shop")
-        ordering = ["price_wholesale_final"]
+        ordering = ["price"]
 
     product = models.ForeignKey(
         Product,

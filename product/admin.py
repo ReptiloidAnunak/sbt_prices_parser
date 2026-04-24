@@ -4,6 +4,23 @@ from django.utils.html import format_html
 from .models import Product, ProductSupplier
 from supplier.models import Supplier
 from .forms import SupplierAdminForm
+from mercado_libre.models import MercadoLibreProduct, MercadoLibreShop
+
+
+from django.contrib import admin
+from options.models import Options
+
+
+@admin.register(Options)
+class OptionsAdmin(admin.ModelAdmin):
+
+    def has_add_permission(self, request):
+        # нельзя создавать больше одного
+        return not Options.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        # нельзя удалять
+        return False
 
 
 class ProductSupplierInline(admin.TabularInline):
@@ -19,6 +36,7 @@ class ProductSupplierInline(admin.TabularInline):
         "price_wholesale_final",
         "price_retail",
         "supplier_iva_in_price",
+        "supplier_ib_caba_in_price",
         "supplier_discount_percent",
         "updated_at",
     )
@@ -26,6 +44,7 @@ class ProductSupplierInline(admin.TabularInline):
         "product_price_sbt",
         "updated_at",
         "supplier_iva_in_price",
+        "supplier_ib_caba_in_price",
         "supplier_discount_percent",
     )
 
@@ -41,6 +60,13 @@ class ProductSupplierInline(admin.TabularInline):
         return obj.supplier.iva_in_price
     supplier_iva_in_price.short_description = "IVA в цене"
     supplier_iva_in_price.boolean = True
+
+    def supplier_ib_caba_in_price(self, obj):
+        if not obj or not obj.supplier_id:
+            return None
+        return obj.supplier.ib_caba_in_prise
+    supplier_ib_caba_in_price.short_description = "IB CABA"
+    supplier_ib_caba_in_price.boolean = True
 
     def supplier_discount_percent(self, obj):
         if not obj or not obj.supplier_id or obj.supplier.discount is None:
@@ -85,6 +111,7 @@ class ProductSupplierAdmin(admin.ModelAdmin):
         "price_wholesale_final",
         "price_retail",
         "supplier_iva_in_price",
+        "supplier_ib_caba_in_price",
         "supplier_discount_percent",
         "updated_at",
     )
@@ -117,6 +144,13 @@ class ProductSupplierAdmin(admin.ModelAdmin):
     supplier_iva_in_price.short_description = "IVA в цене"
     supplier_iva_in_price.boolean = True
 
+    def supplier_ib_caba_in_price(self, obj):
+        if not obj or not obj.supplier_id:
+            return None
+        return obj.supplier.ib_caba_in_prise
+    supplier_ib_caba_in_price.short_description = "IB CABA"
+    supplier_ib_caba_in_price.boolean = True
+
     def supplier_discount_percent(self, obj):
         if not obj or not obj.supplier_id or obj.supplier.discount is None:
             return "-"
@@ -135,6 +169,7 @@ class SupplierAdmin(admin.ModelAdmin):
         "whatsapp",
         "price_list_link",
         "iva_in_price",
+        "ib_caba_in_prise",
         "discount_percent",
         "upt_price_at",
     )
@@ -174,3 +209,78 @@ class SupplierAdmin(admin.ModelAdmin):
                 "Файл загружен и отправлен в обработку 🚀",
                 level=messages.SUCCESS
             )
+
+
+@admin.register(MercadoLibreShop)
+class MercadoLibreShopAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "ml_page",
+        "contact_email",
+        "whatsapp",
+        "updated_at",
+    )
+    search_fields = ("name", "contact_email", "whatsapp")
+    list_filter = ("updated_at",)
+    readonly_fields = ("updated_at",)
+
+    fieldsets = (
+        ("Основная информация", {
+            "fields": ("name", "ml_page")
+        }),
+        ("Контакты", {
+            "fields": ("contact_email", "whatsapp", "facebook")
+        }),
+        ("Файлы", {
+            "fields": ("price_list",)
+        }),
+        ("Системные", {
+            "fields": ("updated_at",)
+        }),
+    )
+
+
+class MercadoLibreProductInline(admin.TabularInline):
+    model = MercadoLibreProduct
+    extra = 0
+    autocomplete_fields = ("product",)
+    fields = (
+        "product",
+        "shop_prod_code",
+        "shop_prod_title",
+        "price",
+        "updated_at",
+    )
+    readonly_fields = ("updated_at",)
+
+
+@admin.register(MercadoLibreProduct)
+class MercadoLibreProductAdmin(admin.ModelAdmin):
+    list_display = (
+        "product",
+        "shop",
+        "shop_prod_code",
+        "price",
+        "updated_at",
+    )
+    list_filter = ("shop", "updated_at")
+    search_fields = (
+        "product__name",
+        "shop__name",
+        "shop_prod_code",
+        "shop_prod_title",
+    )
+    autocomplete_fields = ("product", "shop")
+    readonly_fields = ("updated_at",)
+
+    fieldsets = (
+        ("Связи", {
+            "fields": ("product", "shop")
+        }),
+        ("Данные магазина", {
+            "fields": ("shop_prod_code", "shop_prod_title", "price")
+        }),
+        ("Системные", {
+            "fields": ("updated_at",)
+        }),
+    )

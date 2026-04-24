@@ -4,6 +4,7 @@
 import requests
 import json
 import os
+from settings import JSON_FILE, SUPPLIER_NAME
 
 API_URL = os.getenv(
     "API_URL",
@@ -28,3 +29,5 @@ def send_products_json(file_path, supplier):
     return response
 
 
+if __name__ == "__main__":
+    send_products_json(JSON_FILE, SUPPLIER_NAME)
