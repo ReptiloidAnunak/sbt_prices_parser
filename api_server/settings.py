@@ -154,43 +154,17 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
 
-    "formatters": {
-        "verbose": {
-            "format": "{asctime} [{levelname}] {name} {message}",
-            "style": "{",
-        },
-        "simple": {
-            "format": "{levelname}: {message}",
-            "style": "{",
-        },
-    },
-
     "handlers": {
         "file": {
-            "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": os.path.join(LOG_DIR, "django.log"),
-            "formatter": "verbose",
+            "filename": os.path.join(BASE_DIR, "logs/server.log"),
         },
     },
 
-    "loggers": {
-                    "django": {
-                        "handlers": ["file"],
-                        "level": "INFO",
-                        "propagate": True,
-                    },
-                    "product": {
-                        "handlers": ["file"],
-                        "level": "DEBUG",
-                        "propagate": False,
-                    },
-                    "supplier": {
-                        "handlers": ["file"],
-                        "level": "DEBUG",
-                        "propagate": False,
-                    },
-                }
+    "root": {
+        "handlers": ["file"],
+        "level": "INFO",
+    },
 }
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024

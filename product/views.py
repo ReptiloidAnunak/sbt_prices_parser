@@ -14,6 +14,9 @@ from product.models import ProductSupplier
 from supplier.models import Supplier
 
 logger = logging.getLogger(__name__)
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def clean_decimal(value):
@@ -35,8 +38,10 @@ def clean_decimal(value):
 
 @csrf_exempt
 def import_products(request):
+    
     if request.method != "POST":
         return JsonResponse({"error": "Only POST allowed"}, status=405)
+    print(f'POST: {request}', flush=True)
 
     try:
         data = json.loads(request.body)
@@ -52,7 +57,7 @@ def import_products(request):
     supplier, _ = Supplier.objects.get_or_create(name=supplier_name)
     options = Options.load()
     dollar_rate = Decimal(str(options.dollar_rate))
-
+    logger.info(f'Supperier: {supplier.name} currency: {supplier.currency}')
     df = pd.DataFrame(products_json_lst)
 
     updated = 0
