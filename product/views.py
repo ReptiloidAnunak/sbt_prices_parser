@@ -13,9 +13,7 @@ from options.models import Options
 from product.models import ProductSupplier
 from supplier.models import Supplier
 
-logger = logging.getLogger(__name__)
 import logging
-
 logger = logging.getLogger(__name__)
 
 

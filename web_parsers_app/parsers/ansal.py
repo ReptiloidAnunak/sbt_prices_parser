@@ -4,19 +4,21 @@ import random
 import time
 
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
 from playwright._impl._errors import TimeoutError, Error
 
+from supplier.models import Supplier
 from web_parsers_app.logger import get_logger
-from web_parsers_app.settings import JSON_FILE
+from web_parsers_app.settings import get_json_file, get_supplier_name
 from web_parsers_app.send_json import send_products_json
 
 
 logger = get_logger()
 
+PARSER_NAME = "ansal"
+JSON_FILE = get_json_file(PARSER_NAME)
+SUPPLIER_NAME = get_supplier_name(PARSER_NAME)
 
-SUPPLIER_NAME = "Ansal"
 BASE_URL = "https://www.ansal.com.ar"
 
 
@@ -25,16 +27,19 @@ def sleep_random(a=2, b=5):
 
 
 def load_login_pwd():
-    load_dotenv(".env")
+    supplier = Supplier.objects.get(name__iexact=SUPPLIER_NAME)
+
+    if not supplier.login or not supplier.password:
+        raise ValueError(f"Missing login/password for supplier: {SUPPLIER_NAME}")
 
     return {
-        "LOGIN": os.environ.get("ANSAL_LOGIN") or os.environ.get("LOGIN"),
-        "PASSWORD": os.environ.get("ANSAL_PASSWORD") or os.environ.get("PASSWORD"),
+        "LOGIN": supplier.login,
+        "PASSWORD": supplier.password,
     }
 
 
 def enter_ansal(page, login_data):
-    page.goto(BASE_URL, wait_until="domcontentloaded")
+    page.goto(BASE_URL, wait_until="domcontentloaded", timeout=60000)
     sleep_random(3, 6)
 
     page.get_by_role("link", name="Clientes").click()
@@ -51,15 +56,13 @@ def enter_ansal(page, login_data):
     page.get_by_role("button").click()
     sleep_random(5, 8)
 
-    page.goto(f"{BASE_URL}/search", wait_until="domcontentloaded")
+    page.goto(f"{BASE_URL}/search", wait_until="domcontentloaded", timeout=60000)
     sleep_random(4, 7)
 
     logger.info("Login Ansal: ✅")
 
 
 def get_prods(html):
-    logger.info("get_prods start")
-
     soup = BeautifulSoup(html, "html.parser")
     grid = soup.find("div", class_="container-fluid")
 
@@ -88,7 +91,7 @@ def get_prods(html):
             )
 
         except Exception as e:
-            logger.warning(f"Skip product card: {e}")
+            logger.warning(f"Skip Ansal product card: {e}")
             continue
 
     return result
@@ -127,7 +130,6 @@ def collect_prods(page):
 
     while True:
         page_num += 1
-        prods = []
 
         url = (
             f"{BASE_URL}/search"
@@ -176,9 +178,6 @@ def run():
 
     login_data = load_login_pwd()
 
-    if not login_data["LOGIN"] or not login_data["PASSWORD"]:
-        raise ValueError("Missing Ansal login or password in .env")
-
     clear_json()
 
     with sync_playwright() as p:
@@ -188,6 +187,7 @@ def run():
         try:
             enter_ansal(page, login_data)
             total_products = collect_prods(page)
+
             send_products_json(JSON_FILE, SUPPLIER_NAME)
 
             return {

@@ -4,17 +4,20 @@ import random
 import time
 
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
 
+from supplier.models import Supplier
 from web_parsers_app.logger import get_logger
-from web_parsers_app.settings import JSON_FILE
+from web_parsers_app.settings import get_json_file, get_supplier_name
 from web_parsers_app.send_json import send_products_json
 
 
 logger = get_logger()
 
-SUPPLIER_NAME = "Roma"
+PARSER_NAME = "roma"
+JSON_FILE = get_json_file(PARSER_NAME)
+SUPPLIER_NAME = get_supplier_name(PARSER_NAME)
+
 BASE_URL = "https://tienda.romarep.com.ar"
 
 
@@ -23,11 +26,14 @@ def sleep_random(a=2, b=5):
 
 
 def load_login_pwd():
-    load_dotenv(".env")
+    supplier = Supplier.objects.get(name__iexact=SUPPLIER_NAME)
+
+    if not supplier.login or not supplier.password:
+        raise ValueError(f"Missing login/password for supplier: {SUPPLIER_NAME}")
 
     return {
-        "LOGIN": os.environ.get("ROMA_LOGIN") or os.environ.get("LOGIN"),
-        "PASSWORD": os.environ.get("ROMA_PASSWORD") or os.environ.get("PASSWORD"),
+        "LOGIN": supplier.login,
+        "PASSWORD": supplier.password,
     }
 
 
@@ -80,11 +86,7 @@ def generate_pagination_links(html_content):
 
 def parse_price(price_text):
     price_text = (
-        price_text
-        .strip()
-        .split("\n")[0]
-        .replace("$", "")
-        .strip()
+        price_text.strip().split("\n")[0].replace("$", "").strip()
     )
 
     if " + " in price_text:
@@ -186,10 +188,6 @@ def run():
     logger.info("Roma parser started")
 
     login_data = load_login_pwd()
-
-    if not login_data["LOGIN"] or not login_data["PASSWORD"]:
-        raise ValueError("Missing Roma login/password in .env")
-
     clear_json()
 
     with sync_playwright() as p:

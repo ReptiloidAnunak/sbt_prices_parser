@@ -48,8 +48,8 @@ INSTALLED_APPS = [
     'supplier',
     'product',
     'mercado_libre',
-    'options'
-
+    'options',
+    'web_parsers_app',
 ]
 
 MIDDLEWARE = [

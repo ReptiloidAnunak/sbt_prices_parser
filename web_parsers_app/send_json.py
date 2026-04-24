@@ -1,33 +1,29 @@
-
-
-
-import requests
 import json
 import os
-from settings import JSON_FILE, SUPPLIER_NAME
+
+import requests
+
 
 API_URL = os.getenv(
     "API_URL",
-    "http://host.docker.internal:8010/api/products/import/"
+    "http://sbt_pars_server:8000/api/products/import/"
 )
 
 
 def send_products_json(file_path, supplier):
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         products = json.load(f)
 
     payload = {
         "supplier": supplier,
-        "products": products
+        "products": products,
     }
 
-    response = requests.post(API_URL, json=payload)
+    response = requests.post(API_URL, json=payload, timeout=120)
 
     print("Status:", response.status_code)
     print("Response:", response.text)
 
+    response.raise_for_status()
+
     return response
-
-
-if __name__ == "__main__":
-    send_products_json(JSON_FILE, SUPPLIER_NAME)

@@ -501,11 +501,14 @@ def load_mercado_libre_shops():
 # -------------------- RUN --------------------
 
 def run():
+    logger.info('Initial loading')
     Options.load()
     load_suppliers()
     import_products_from_excel()
     load_prods_suppliers_codes_titles()
     load_mercado_libre_shops()
+    logger.info('Initial info has been loaded')
+
 
 
 run()

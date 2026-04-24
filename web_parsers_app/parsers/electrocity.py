@@ -4,17 +4,20 @@ import random
 import time
 
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
 
+from supplier.models import Supplier
 from web_parsers_app.logger import get_logger
-from web_parsers_app.settings import JSON_FILE
+from web_parsers_app.settings import get_json_file, get_supplier_name
 from web_parsers_app.send_json import send_products_json
 
 
 logger = get_logger()
 
-SUPPLIER_NAME = "Electrocity"
+PARSER_NAME = "electrocity"
+JSON_FILE = get_json_file(PARSER_NAME)
+SUPPLIER_NAME = get_supplier_name(PARSER_NAME)
+
 BASE_URL = "https://electrocity.com.ar"
 
 
@@ -26,11 +29,14 @@ def sleep_random(a=2, b=5):
 
 
 def load_login_pwd():
-    load_dotenv(".env")
+    supplier = Supplier.objects.get(name__iexact=SUPPLIER_NAME)
+
+    if not supplier.login or not supplier.password:
+        raise ValueError(f"Missing login/password for supplier: {SUPPLIER_NAME}")
 
     return {
-        "LOGIN": os.environ.get("ELECTROCITY_LOGIN") or os.environ.get("LOGIN"),
-        "PASSWORD": os.environ.get("ELECTROCITY_PASSWORD") or os.environ.get("PASSWORD"),
+        "LOGIN": supplier.login,
+        "PASSWORD": supplier.password,
     }
 
 
@@ -221,9 +227,6 @@ def run():
     logger.info("🚀 Electrocity parser started")
 
     login_data = load_login_pwd()
-
-    if not login_data["LOGIN"] or not login_data["PASSWORD"]:
-        raise ValueError("Missing Electrocity login/password in .env")
 
     clear_json()
 
