@@ -1,55 +1,58 @@
 services:
   sbt_pars_db:
     container_name: sbt_pars_db
-    image: postgres
+    image: postgres:16
     restart: always
     environment:
-        POSTGRES_DB: postgres
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     env_file:
       - .env
     volumes:
-      - data_base:/data_base
+      - data_base:/var/lib/postgresql/data
     networks:
       - app-network
 
   sbt_pars_server:
-    depends_on:
-      - sbt_pars_db
     container_name: sbt_pars_server
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '8010:8000'
+      - "8010:8000"
     command: ./entrypoint.sh
     volumes:
       - .:/app
       - ./logs:/app/logs
       - ./staticfiles:/app/staticfiles
       - ./media:/app/media
+    depends_on:
+      - sbt_pars_db
+      - redis
     networks:
       - app-network
-
     env_file:
       - .env
     restart: always
-  
+
   redis:
     image: redis:7
     container_name: sbt_pars_redis
+    restart: always
     networks:
       - app-network
 
-  celery:
+  celery_worker:
+    container_name: sbt_pars_celery_worker
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: sbt_pars_celery
-    command: celery -A api_server worker -l info
+    command: celery -A api_server worker -l info --concurrency=1
     volumes:
       - .:/app
+      - ./logs:/app/logs
+      - ./media:/app/media
     depends_on:
       - redis
       - sbt_pars_db
@@ -57,12 +60,32 @@ services:
       - app-network
     env_file:
       - .env
+    restart: always
 
+  celery_beat:
+    container_name: sbt_pars_celery_beat
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A api_server beat -l info
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+      - ./media:/app/media
+    depends_on:
+      - redis
+      - sbt_pars_db
+      - celery_worker
+    networks:
+      - app-network
+    env_file:
+      - .env
+    restart: always
 
 networks:
   app-network:
     driver: bridge
-  
+
   bws_core_network:
     external: true
 

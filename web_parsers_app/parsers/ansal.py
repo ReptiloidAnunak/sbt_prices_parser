@@ -1,69 +1,65 @@
+import json
+import os
+import random
+import time
+
+from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
 from playwright._impl._errors import TimeoutError, Error
-from bs4 import BeautifulSoup
-import pandas as pd
-import time
-import random
-import os
-from dotenv import load_dotenv
-import json
-from logger import get_logger
-from settings import JSON_FILE
-from send_json import send_products_json
+
+from web_parsers_app.logger import get_logger
+from web_parsers_app.settings import JSON_FILE
+from web_parsers_app.send_json import send_products_json
 
 
 logger = get_logger()
 
-# -----------------------------
-# Utils
-# -----------------------------
+
+SUPPLIER_NAME = "Ansal"
+BASE_URL = "https://www.ansal.com.ar"
+
 
 def sleep_random(a=2, b=5):
     time.sleep(random.uniform(a, b))
 
-# -----------------------------
-# Login
-# -----------------------------
 
 def load_login_pwd():
-    load_dotenv('.env')
+    load_dotenv(".env")
+
     return {
-            'LOGIN': os.environ.get('LOGIN'),
-            'PASSWORD': os.environ.get('PASSWORD')
-            }
-
-login_data = load_login_pwd()
+        "LOGIN": os.environ.get("ANSAL_LOGIN") or os.environ.get("LOGIN"),
+        "PASSWORD": os.environ.get("ANSAL_PASSWORD") or os.environ.get("PASSWORD"),
+    }
 
 
-
-def enter_ansal(page):
-    page.goto("https://www.ansal.com.ar/")
+def enter_ansal(page, login_data):
+    page.goto(BASE_URL, wait_until="domcontentloaded")
     sleep_random(3, 6)
 
     page.get_by_role("link", name="Clientes").click()
     sleep_random(3, 6)
 
-    page.wait_for_selector('input[placeholder="Cliente"]')
+    page.wait_for_selector('input[placeholder="Cliente"]', timeout=30000)
 
-    page.fill('input[placeholder="Cliente"]', login_data['LOGIN'])
+    page.fill('input[placeholder="Cliente"]', login_data["LOGIN"])
     sleep_random(1, 2)
 
-    page.fill('input[placeholder="Contraseña"]', login_data['PASSWORD'])
+    page.fill('input[placeholder="Contraseña"]', login_data["PASSWORD"])
     sleep_random(1, 2)
 
     page.get_by_role("button").click()
     sleep_random(5, 8)
 
-    page.goto("https://www.ansal.com.ar/search")
+    page.goto(f"{BASE_URL}/search", wait_until="domcontentloaded")
     sleep_random(4, 7)
-    logger.info('Login Ansal: ✅')
 
-# -----------------------------
-# Parse products
-# -----------------------------
+    logger.info("Login Ansal: ✅")
+
 
 def get_prods(html):
-    logger.info('get_prods start')
+    logger.info("get_prods start")
+
     soup = BeautifulSoup(html, "html.parser")
     grid = soup.find("div", class_="container-fluid")
 
@@ -77,27 +73,32 @@ def get_prods(html):
         try:
             price_text = card.find("div", class_="Precios").text.strip()
             price = price_text.split(" ")[-1]
-            price = float(price.replace(',', ''))
-            sku = card.find("h4").find("span").text.strip()
+            price = float(price.replace(",", ""))
 
-            result.append({
-                "code": sku,
-                "title": card.find("div", class_="desc").text.strip(),
-                "price": price,
-                "url": "https://www.ansal.com.ar" + '/producto/' + sku
-            })
-        except Exception:
+            sku = card.find("h4").find("span").text.strip()
+            title = card.find("div", class_="desc").text.strip()
+
+            result.append(
+                {
+                    "code": sku,
+                    "title": title,
+                    "price": price,
+                    "url": f"{BASE_URL}/producto/{sku}",
+                }
+            )
+
+        except Exception as e:
+            logger.warning(f"Skip product card: {e}")
             continue
 
     return result
 
-# -----------------------------
-# Save JSON
-# -----------------------------
 
-def save_to_json(prods):
-    if os.path.exists(JSON_FILE):
-        with open(JSON_FILE, 'r', encoding='utf-8') as f:
+def save_to_json(prods, json_file=JSON_FILE):
+    os.makedirs(os.path.dirname(json_file), exist_ok=True)
+
+    if os.path.exists(json_file):
+        with open(json_file, "r", encoding="utf-8") as f:
             try:
                 existing_data = json.load(f)
             except json.JSONDecodeError:
@@ -107,75 +108,101 @@ def save_to_json(prods):
 
     existing_data.extend(prods)
 
-    with open(JSON_FILE, 'w', encoding='utf-8') as f:
+    with open(json_file, "w", encoding="utf-8") as f:
         json.dump(existing_data, f, ensure_ascii=False, indent=2)
 
     logger.info(f"Saved {len(prods)} products to JSON")
 
-# -----------------------------
-# Collect
-# -----------------------------
+
+def clear_json(json_file=JSON_FILE):
+    os.makedirs(os.path.dirname(json_file), exist_ok=True)
+
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump([], f, ensure_ascii=False, indent=2)
+
 
 def collect_prods(page):
-    try:
-        page_num = 0
+    total_products = 0
+    page_num = 0
 
-        while True:
-            page_num += 1
-            url = f"https://www.ansal.com.ar/search?q=&page={page_num}&viewMode=grid&orderBy=orden%20asc&moneda=ARS"
+    while True:
+        page_num += 1
+        prods = []
+
+        url = (
+            f"{BASE_URL}/search"
+            f"?q=&page={page_num}&viewMode=grid&orderBy=orden%20asc&moneda=ARS"
+        )
+
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            sleep_random(4, 8)
+
+            html = page.content()
+            prods = get_prods(html)
+
+        except (Error, TimeoutError) as e:
+            logger.warning(f"Playwright error on page {page_num}: {e}")
+            sleep_random(15, 25)
+
             try:
-                page.goto(url)
-                sleep_random(4, 8)
-
-                html = page.content()
-                prods = get_prods(html)
-
-                if not prods:
-                    break
-
-                logger.info(f"Page {page_num}: {len(prods)} products")
-            except (Error, TimeoutError) as e:
-                logger.info(f'\n\n{e}\n\n')
-                time.sleep(20)
-                page.goto(url)
+                page.goto(url, wait_until="domcontentloaded", timeout=60000)
                 sleep_random(5, 10)
 
                 html = page.content()
                 prods = get_prods(html)
 
-                if not prods:
-                    logger.info('No more products')
-                    break
+            except Exception as retry_error:
+                logger.exception(f"Retry failed on page {page_num}: {retry_error}")
+                break
 
-                logger.info(f"Page {page_num}: {len(prods)} products")
-            finally:
-                save_to_json(prods)
-                sleep_random(5, 10)
-        logger.info('Parsing is finished')
-    except Exception as e:
-        logger.error(e)
-    finally:
-        send_products_json(JSON_FILE, 'Ansal')
+        if not prods:
+            logger.info("No more products")
+            break
 
-            
+        save_to_json(prods)
+        total_products += len(prods)
 
-# -----------------------------
-# Main
-# -----------------------------
+        logger.info(f"Page {page_num}: {len(prods)} products")
+        sleep_random(5, 10)
+
+    logger.info(f"Parsing finished. Total products: {total_products}")
+
+    return total_products
+
 
 def run():
-    logger.info("Ansal parser")
+    logger.info("Ansal parser started")
+
+    login_data = load_login_pwd()
+
+    if not login_data["LOGIN"] or not login_data["PASSWORD"]:
+        raise ValueError("Missing Ansal login or password in .env")
+
+    clear_json()
+
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        logger.info("START")
 
         try:
-            enter_ansal(page)
-            collect_prods(page)
+            enter_ansal(page, login_data)
+            total_products = collect_prods(page)
+            send_products_json(JSON_FILE, SUPPLIER_NAME)
+
+            return {
+                "status": "ok",
+                "supplier": SUPPLIER_NAME,
+                "products": total_products,
+            }
+
+        except Exception as e:
+            logger.exception(f"Ansal parser failed: {e}")
+            raise
+
         finally:
             browser.close()
-        
+
 
 if __name__ == "__main__":
     run()

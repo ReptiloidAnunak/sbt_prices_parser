@@ -153,7 +153,9 @@ def load_suppliers():
         site = row.get("Сайт")
         discount = row.get("Скидка %")
         iva = row.get("IVA")
-        currency = row.get("Валюта")  # или "Currency" — как называется колонка у тебя в Excel
+        currency = row.get("Валюта")
+        login = row.get("Логин")
+        password = row.get("Пароль")
 
         if pd.isna(name):
             continue
@@ -162,21 +164,11 @@ def load_suppliers():
         if not name or name.lower() == "nan":
             continue
 
-        if pd.isna(site):
-            site = None
-        else:
-            site = str(site).strip()
-            if not site or site.lower() == "nan":
-                site = None
-            elif not site.startswith(("http://", "https://")):
-                site = "https://" + site
+        site = clean_link(site)
 
         iva = not pd.isna(iva)
 
-        if not pd.isna(discount):
-            discount = float(discount)
-        else:
-            discount = None
+        discount = None if pd.isna(discount) else float(discount)
 
         if pd.isna(currency):
             currency = "ARS"
@@ -185,6 +177,9 @@ def load_suppliers():
             if currency not in ["ARS", "USD"]:
                 currency = "ARS"
 
+        login = clean_value(login)
+        password = clean_value(password)
+
         Supplier.objects.update_or_create(
             name=name,
             defaults={
@@ -192,7 +187,9 @@ def load_suppliers():
                 "discount": discount,
                 "iva_in_price": iva,
                 "currency": currency,
-            }
+                "login": login,
+                "password": password,
+            },
         )
 
 # -------------------- PRODUCTS --------------------

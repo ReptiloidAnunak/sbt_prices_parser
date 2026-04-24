@@ -1,13 +1,16 @@
-FROM python:3.11-slim
+FROM mcr.microsoft.com/playwright/python:v1.42.0-jammy
 
 WORKDIR /app
-RUN python3 -m venv .venv
 
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+COPY requirements.txt .
+
+RUN python -m pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY entrypoint.sh .
 RUN chmod +x ./entrypoint.sh
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from celery.schedules import crontab
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -168,3 +169,23 @@ LOGGING = {
 }
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+
+
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/1"
+
+CELERY_TIMEZONE = "America/Argentina/Buenos_Aires"
+CELERY_ENABLE_UTC = False
+
+CELERY_BEAT_SCHEDULE = {
+    "run-electrofrig-every-night": {
+        "task": "web_parsers_app.tasks.run_web_parser",
+        "schedule": crontab(hour=3, minute=0),
+        "args": ("electrofrig",),
+    },
+    "run-ansal-every-night": {
+        "task": "web_parsers_app.tasks.run_web_parser",
+        "schedule": crontab(hour=3, minute=30),
+        "args": ("ansal",),
+    },
+}
