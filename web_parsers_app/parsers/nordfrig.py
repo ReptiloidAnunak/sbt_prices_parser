@@ -12,10 +12,9 @@ from web_parsers_app.logger import get_logger
 from web_parsers_app.settings import get_json_file, get_supplier_name
 from web_parsers_app.send_json import send_products_json
 
-
-logger = get_logger()
-
 PARSER_NAME = "norfrig"
+logger = get_logger(PARSER_NAME)
+
 JSON_FILE = get_json_file(PARSER_NAME)
 SUPPLIER_NAME = get_supplier_name(PARSER_NAME)
 

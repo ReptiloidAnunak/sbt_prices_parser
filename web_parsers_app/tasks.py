@@ -1,4 +1,4 @@
-from celery import shared_task
+from celery import shared_task, chain
 
 from web_parsers_app.parsers.ansal import run as run_ansal
 from web_parsers_app.parsers.duna import run as run_duna
@@ -10,13 +10,13 @@ from web_parsers_app.parsers.roma import run as run_roma
 
 
 PARSERS = {
-    "ansal": run_ansal,
     "duna": run_duna,
     "electrocity": run_electrocity,
     "electrofrig": run_electrofrig,
     "fijamom": run_fijamom,
     "nordfrig": run_nordfrig,
     "roma": run_roma,
+    "ansal": run_ansal,
 }
 
 
@@ -25,8 +25,8 @@ PARSERS = {
     autoretry_for=(Exception,),
     retry_backoff=60,
     retry_kwargs={"max_retries": 3},
-    soft_time_limit=600,
-    time_limit=900,
+    soft_time_limit=1800,
+    time_limit=2100,
 )
 def run_web_parser(self, parser_name):
     parser_func = PARSERS.get(parser_name)
@@ -39,12 +39,12 @@ def run_web_parser(self, parser_name):
 
 @shared_task
 def run_all_web_parsers():
-    result = {}
-
-    for parser_name in PARSERS:
-        try:
-            result[parser_name] = run_web_parser(parser_name)
-        except Exception as e:
-            result[parser_name] = f"ERROR: {e}"
-
-    return result
+    return chain(
+        run_web_parser.si("duna"),
+        run_web_parser.si("electrocity"),
+        run_web_parser.si("electrofrig"),
+        run_web_parser.si("fijamom"),
+        run_web_parser.si("nordfrig"),
+        run_web_parser.si("roma"),
+        run_web_parser.si("ansal"),
+    ).apply_async()

@@ -1,7 +1,8 @@
 import logging
 import os
+from pathlib import Path
 
-LOG_FILE = os.getenv("LOG_FILE", "/app/logs/ansal.log")
+from web_parsers_app.settings import LOGS_DIR
 
 
 def get_logger(name: str = "parser"):
@@ -12,9 +13,11 @@ def get_logger(name: str = "parser"):
 
     logger.setLevel(logging.INFO)
 
-    os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+    # 📂 файл = logs/parsers/<name>.log
+    log_file = Path(LOGS_DIR) / f"{name}.log"
+    os.makedirs(log_file.parent, exist_ok=True)
 
-    file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
+    file_handler = logging.FileHandler(log_file, encoding="utf-8")
     file_handler.setLevel(logging.INFO)
 
     console_handler = logging.StreamHandler()

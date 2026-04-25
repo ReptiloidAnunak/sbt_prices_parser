@@ -15,6 +15,8 @@ from web_parsers_app.send_json import send_products_json
 logger = get_logger()
 
 PARSER_NAME = "electrocity"
+logger = get_logger(PARSER_NAME)
+
 JSON_FILE = get_json_file(PARSER_NAME)
 SUPPLIER_NAME = get_supplier_name(PARSER_NAME)
 

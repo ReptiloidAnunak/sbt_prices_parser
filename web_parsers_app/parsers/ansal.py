@@ -9,15 +9,16 @@ from playwright._impl._errors import TimeoutError, Error
 
 from supplier.models import Supplier
 from web_parsers_app.logger import get_logger
-from web_parsers_app.settings import get_json_file, get_supplier_name
+from web_parsers_app.settings import get_json_file, get_supplier_name, get_screen_shot_path
 from web_parsers_app.send_json import send_products_json
 
 
-logger = get_logger()
-
 PARSER_NAME = "ansal"
+logger = get_logger(PARSER_NAME)
+
 JSON_FILE = get_json_file(PARSER_NAME)
 SUPPLIER_NAME = get_supplier_name(PARSER_NAME)
+SCREENSHOT_PATH = get_screen_shot_path(PARSER_NAME)
 
 BASE_URL = "https://www.ansal.com.ar"
 
@@ -62,37 +63,93 @@ def enter_ansal(page, login_data):
     logger.info("Login Ansal: ✅")
 
 
+def parse_price(price_text):
+    if not price_text:
+        return None
+
+    price_text = (
+        str(price_text)
+        .replace("$", "")
+        .replace(".", "")
+        .replace(",", ".")
+        .strip()
+    )
+
+    try:
+        return float(price_text)
+    except ValueError:
+        return None
+
+
+def get_code_from_url(url):
+    if not url:
+        return ""
+
+    return url.rstrip("/").split("/")[-1].strip()
+
+
 def get_prods(html):
     soup = BeautifulSoup(html, "html.parser")
-    grid = soup.find("div", class_="container-fluid")
 
-    if not grid:
-        return []
+    cards = soup.find_all("div", class_="ContenedorProductos")
+    logger.info(f"Ansal cards found: {len(cards)}")
 
-    cards = grid.find_all("div", class_="ContenedorProductos")
     result = []
 
     for card in cards:
         try:
-            price_text = card.find("div", class_="Precios").text.strip()
-            price = price_text.split(" ")[-1]
-            price = float(price.replace(",", ""))
+            link_tag = card.find("a", class_="result-item--grid__top")
+            img_tag = card.find("img", class_="ImgGrid")
+            price_tag = card.select_one("div.Precios span.price")
+            form_tag = card.find("form", attrs={"role": "add-to-cart"})
 
-            sku = card.find("h4").find("span").text.strip()
-            title = card.find("div", class_="desc").text.strip()
+            if not link_tag or not price_tag:
+                logger.warning("Skip Ansal card: missing link or price")
+                continue
+
+            url = link_tag.get("href", "").strip()
+
+            if url and not url.startswith("http"):
+                url = BASE_URL + url
+
+            code = ""
+
+            if form_tag and form_tag.get("product"):
+                code = str(form_tag.get("product")).strip()
+
+            if not code:
+                code = get_code_from_url(url)
+
+            title = ""
+
+            if img_tag and img_tag.get("alt"):
+                title = img_tag.get("alt").strip()
+
+            if not title:
+                title = link_tag.get_text(" ", strip=True)
+
+            price = parse_price(price_tag.get_text(strip=True))
+
+            if not code or not title or price is None:
+                logger.warning(
+                    f"Skip Ansal card: code={code}, title={title}, price={price}"
+                )
+                continue
 
             result.append(
                 {
-                    "code": sku,
+                    "code": code,
                     "title": title,
                     "price": price,
-                    "url": f"{BASE_URL}/producto/{sku}",
+                    "url": url,
                 }
             )
 
         except Exception as e:
             logger.warning(f"Skip Ansal product card: {e}")
             continue
+
+    logger.info(f"Ansal products parsed: {len(result)}")
 
     return result
 
@@ -122,6 +179,30 @@ def clear_json(json_file=JSON_FILE):
 
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump([], f, ensure_ascii=False, indent=2)
+
+
+def save_debug_files(page, page_num):
+    try:
+        page.screenshot(
+            path=str(SCREENSHOT_PATH),
+            full_page=True,
+        )
+        logger.info(f"Screenshot saved: {SCREENSHOT_PATH}")
+    except Exception as e:
+        logger.warning(f"Failed to save screenshot: {e}")
+
+    try:
+        debug_html_path = SCREENSHOT_PATH.with_name(
+            f"{PARSER_NAME}_page_{page_num}_debug.html"
+        )
+
+        with open(debug_html_path, "w", encoding="utf-8") as f:
+            f.write(page.content())
+
+        logger.info(f"Debug HTML saved: {debug_html_path}")
+
+    except Exception as e:
+        logger.warning(f"Failed to save debug HTML: {e}")
 
 
 def collect_prods(page):
@@ -156,10 +237,12 @@ def collect_prods(page):
 
             except Exception as retry_error:
                 logger.exception(f"Retry failed on page {page_num}: {retry_error}")
+                save_debug_files(page, page_num)
                 break
 
         if not prods:
             logger.info("No more products")
+            save_debug_files(page, page_num)
             break
 
         save_to_json(prods)
@@ -174,35 +257,45 @@ def collect_prods(page):
 
 
 def run():
-    logger.info("Ansal parser started")
+    try: 
+        logger.info("Ansal parser started")
 
-    login_data = load_login_pwd()
+        login_data = load_login_pwd()
+        clear_json()
 
-    clear_json()
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+            try:
+                enter_ansal(page, login_data)
+                total_products = collect_prods(page)
 
-        try:
-            enter_ansal(page, login_data)
-            total_products = collect_prods(page)
+                send_products_json(JSON_FILE, SUPPLIER_NAME)
 
-            send_products_json(JSON_FILE, SUPPLIER_NAME)
+                return {
+                    "status": "ok",
+                    "supplier": SUPPLIER_NAME,
+                    "products": total_products,
+                }
 
-            return {
-                "status": "ok",
-                "supplier": SUPPLIER_NAME,
-                "products": total_products,
-            }
+            except Exception as e:
+                logger.exception(f"Ansal parser failed: {e}")
+                save_debug_files(page, 0)
+                raise
 
-        except Exception as e:
-            logger.exception(f"Ansal parser failed: {e}")
-            raise
+            finally:
+                browser.close()
+    except Exception:
+        send_products_json(JSON_FILE, SUPPLIER_NAME)
 
-        finally:
-            browser.close()
-
+        return {
+            "status": "ok",
+            "supplier": SUPPLIER_NAME,
+            "products": total_products,
+        }
 
 if __name__ == "__main__":
-    run()
+    
+        run()
+    

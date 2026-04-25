@@ -13,7 +13,7 @@ from options.models import Options
 from product.models import ProductSupplier
 from supplier.models import Supplier
 
-import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,10 +36,8 @@ def clean_decimal(value):
 
 @csrf_exempt
 def import_products(request):
-    
     if request.method != "POST":
         return JsonResponse({"error": "Only POST allowed"}, status=405)
-    print(f'POST: {request}', flush=True)
 
     try:
         data = json.loads(request.body)
@@ -52,15 +50,26 @@ def import_products(request):
     if not supplier_name:
         return JsonResponse({"error": "supplier is required"}, status=400)
 
-    supplier, _ = Supplier.objects.get_or_create(name=supplier_name)
+    supplier = Supplier.objects.filter(name__iexact=supplier_name).first()
+
+    if not supplier:
+        return JsonResponse(
+            {"error": f"Supplier not found: {supplier_name}"},
+            status=400,
+        )
+
     options = Options.load()
     dollar_rate = Decimal(str(options.dollar_rate))
-    logger.info(f'Supperier: {supplier.name} currency: {supplier.currency}')
-    df = pd.DataFrame(products_json_lst)
 
     updated = 0
     not_found = 0
+    skipped = 0
     errors = 0
+
+    logger.info(
+        f"Web import started | supplier={supplier.name} | "
+        f"currency={supplier.currency} | total={len(products_json_lst)}"
+    )
 
     for item in products_json_lst:
         try:
@@ -70,12 +79,17 @@ def import_products(request):
             currency = str(item.get("currency") or supplier.currency or "ARS").upper().strip()
 
             if not code:
+                skipped += 1
+                logger.warning(f"Missing code | supplier={supplier.name} | item={item}")
                 continue
 
             price = clean_decimal(raw_price)
+
             if price is None:
+                skipped += 1
                 logger.warning(
-                    f"Empty or invalid price for supplier={supplier_name}, code={code}, title={title}"
+                    f"Invalid price | supplier={supplier.name} | "
+                    f"code={code} | title={title} | price={raw_price}"
                 )
                 continue
 
@@ -84,53 +98,41 @@ def import_products(request):
 
             product_price_obj = ProductSupplier.objects.filter(
                 supplier=supplier,
-                supplier_prod_code=str(code).strip()
+                supplier_prod_code=str(code).strip(),
             ).first()
 
             if not product_price_obj:
                 not_found += 1
                 logger.warning(
-                    f"Not found for supplier={supplier_name}, code={code}, title={title}"
+                    f"Not found | supplier={supplier.name} | code={code} | title={title}"
                 )
                 continue
 
             product_price_obj.price_wholesale = price
             product_price_obj.supplier_prod_title = str(title).strip()[:255] if title else ""
-            product_price_obj.save()
+            product_price_obj.save(update_fields=["price_wholesale", "supplier_prod_title"])
 
             updated += 1
-            logger.info(
-                f"Updated: {product_price_obj.product.title_sbt} | code={code} | currency={currency} | price={price}"
-            )
 
         except Exception as e:
             errors += 1
             logger.exception(
-                f"Import error | supplier={supplier_name} | item={item} | error={e}"
+                f"Import error | supplier={supplier.name} | item={item} | error={e}"
             )
 
-    try:
-        buffer = BytesIO()
-        df.to_excel(buffer, index=False)
-        buffer.seek(0)
+    logger.info(
+        f"Web import finished | supplier={supplier.name} | "
+        f"updated={updated} | not_found={not_found} | skipped={skipped} | errors={errors}"
+    )
 
-        filename = f"products_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
-
-        supplier.price_list.save(
-            filename,
-            ContentFile(buffer.read()),
-            save=True
-        )
-    except Exception as e:
-        logger.exception(
-            f"Failed to save uploaded xlsx for supplier={supplier_name}: {e}"
-        )
-
-    return JsonResponse({
-        "status": "ok",
-        "supplier": supplier_name,
-        "updated": updated,
-        "not_found": not_found,
-        "errors": errors,
-        "total": len(products_json_lst),
-    })
+    return JsonResponse(
+        {
+            "status": "ok",
+            "supplier": supplier.name,
+            "updated": updated,
+            "not_found": not_found,
+            "skipped": skipped,
+            "errors": errors,
+            "total": len(products_json_lst),
+        }
+    )

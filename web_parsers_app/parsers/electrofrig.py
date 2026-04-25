@@ -16,6 +16,8 @@ from web_parsers_app.settings import get_json_file, get_supplier_name
 logger = get_logger()
 
 PARSER_NAME = "electrofrig"
+logger = get_logger(PARSER_NAME)
+
 JSON_FILE = get_json_file(PARSER_NAME)
 SUPPLIER_NAME = get_supplier_name(PARSER_NAME)
 

@@ -23,7 +23,6 @@ PARSERS = {
     "casa_jarse": CasaJarseParser,
 }
 
-
 def get_parser(supplier):
     key = supplier.name.lower().strip().replace(" ", "_")
     parser_class = PARSERS.get(key)

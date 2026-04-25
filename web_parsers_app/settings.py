@@ -23,16 +23,14 @@ JSON_FILES = {
 
 SUPPLIER_NAMES = {
     "ansal": "Ansal",
-    "duna": "Duna",
+    "duna": "Duna srl",
     "electrocity": "Electrocity",
     "electrofrig": "Electrofrig",
     "fijamom": "Fijamom",
     "norfrig": "Norfrig",
-    "roma": "Roma",
+    "roma": "Roma Repuestos insumos",
 }
 
-
-# --- helpers ---
 
 def get_json_file(parser_name: str) -> Path:
     return JSON_FILES[parser_name]
@@ -40,3 +38,9 @@ def get_json_file(parser_name: str) -> Path:
 
 def get_supplier_name(parser_name: str) -> str:
     return SUPPLIER_NAMES[parser_name]
+
+def get_screen_shot_path(parser_name):
+    screenshot_dir = LOGS_DIR / "screens" / parser_name
+    screenshot_dir.mkdir(parents=True, exist_ok=True)
+
+    return screenshot_dir / f"{parser_name}_error.png"

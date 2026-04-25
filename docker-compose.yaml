@@ -56,10 +56,14 @@ services:
     depends_on:
       - redis
       - sbt_pars_db
+      - sbt_pars_server
     networks:
       - app-network
     env_file:
       - .env
+    environment:
+      API_URL: "http://sbt_pars_server:8000/api/products/import/"
+      API_HOST_HEADER: "localhost"
     restart: always
 
   celery_beat:
@@ -75,11 +79,15 @@ services:
     depends_on:
       - redis
       - sbt_pars_db
+      - sbt_pars_server
       - celery_worker
     networks:
       - app-network
     env_file:
       - .env
+    environment:
+      API_URL: "http://sbt_pars_server:8000/api/products/import/"
+      API_HOST_HEADER: "localhost"
     restart: always
 
 networks:
