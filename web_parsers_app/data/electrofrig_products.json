@@ -13388,5 +13388,355 @@
     "code": "Cod0",
     "title": "Manual de instalación caño Hydro Aluminio",
     "price": 0.0
+  },
+  {
+    "code": "Cod2084",
+    "title": "TEE DE COBRE 7/8",
+    "price": 6.45
+  },
+  {
+    "code": "Cod2082",
+    "title": "TEE DE COBRE 5/8",
+    "price": 3.18
+  },
+  {
+    "code": "Cod2080",
+    "title": "TEE DE COBRE 3/8",
+    "price": 1.43
+  },
+  {
+    "code": "Cod2083",
+    "title": "TEE DE COBRE 3/4",
+    "price": 4.86
+  },
+  {
+    "code": "Cod2091",
+    "title": "TEE DE COBRE 2",
+    "price": 39.16
+  },
+  {
+    "code": "Cod2090",
+    "title": "TEE DE COBRE 15/8",
+    "price": 26.15
+  },
+  {
+    "code": "Cod2086",
+    "title": "TEE DE COBRE 11/8",
+    "price": 14.91
+  },
+  {
+    "code": "Cod2087",
+    "title": "TEE DE COBRE 11/4",
+    "price": 18.09
+  },
+  {
+    "code": "Cod2100",
+    "title": "TEE DE COBRE 1/4",
+    "price": 1.23
+  },
+  {
+    "code": "Cod2081",
+    "title": "TEE DE COBRE 1/2",
+    "price": 2.32
+  },
+  {
+    "code": "Cod2085",
+    "title": "TEE DE COBRE 1",
+    "price": 8.47
+  },
+  {
+    "code": "Cod2672",
+    "title": "TEE BR.1/4FM X1/4FM X1/8GH HEA",
+    "price": 11.79
+  },
+  {
+    "code": "Cod25190",
+    "title": "TARUGO A.A.PORTA PRECINTO X10",
+    "price": 0.49
+  },
+  {
+    "code": "Cod25180",
+    "title": "TARUGO A.A.GRAMPA 3/4 X10",
+    "price": 0.67
+  },
+  {
+    "code": "Cod2626",
+    "title": "TAPON BRONCE 5/16 F.M.",
+    "price": 0.88
+  },
+  {
+    "code": "Cod2627",
+    "title": "TAPON BRONCE 3/8 F.M.",
+    "price": 1.11
+  },
+  {
+    "code": "Cod2746",
+    "title": "TAPON BRONCE 1/4 FM.",
+    "price": 0.59
+  },
+  {
+    "code": "Cod2628",
+    "title": "TAPON BRONCE 1/2 F.M.",
+    "price": 2.02
+  },
+  {
+    "code": "Cod59032",
+    "title": "TAPA KOHINOOR L700/2",
+    "price": 2.19
+  },
+  {
+    "code": "Cod58127",
+    "title": "TAPA KOHIN.TIP.735 C/TRAB.BEIG",
+    "price": 3.52
+  },
+  {
+    "code": "Cod58126",
+    "title": "TAPA KOHIN.TIP.142 C/TRAB.GRIS",
+    "price": 3.52
+  },
+  {
+    "code": "Cod58112",
+    "title": "TAPA KOHIN.NEG.TIPO 2042/52/62",
+    "price": 3.99
+  },
+  {
+    "code": "Cod58113",
+    "title": "TAPA KOHIN.BLA.TIPO 2042/52/62",
+    "price": 3.99
+  },
+  {
+    "code": "Cod58164",
+    "title": "TAPA KOHIN.A662/L600",
+    "price": 2.19
+  },
+  {
+    "code": "Cod57540",
+    "title": "TAPA DREAN QV",
+    "price": 4.75
+  },
+  {
+    "code": "Cod57545",
+    "title": "TAPA DR.PATRIOT 54CB/54CS",
+    "price": 15.0
+  },
+  {
+    "code": "Cod57445",
+    "title": "TAPA DR.PATRIOT 54/57RS",
+    "price": 16.59
+  },
+  {
+    "code": "Cod51252",
+    "title": "TAPA DR.GOLD 1910/156/.6.06",
+    "price": 63.87
+  },
+  {
+    "code": "Cod51257",
+    "title": "TAPA DR. CONCEPT 5.5",
+    "price": 35.86
+  },
+  {
+    "code": "Cod58756",
+    "title": "TAPA CUBA SAMSUNG WF1904",
+    "price": 204.13
+  },
+  {
+    "code": "Cod58762",
+    "title": "TAPA CUBA SAMSUNG WF1702",
+    "price": 144.58
+  },
+  {
+    "code": "Cod55535",
+    "title": "TAPA CUBA PLASTICA DR.EXC.BLUE",
+    "price": 31.35
+  },
+  {
+    "code": "Cod55528",
+    "title": "TAPA CUBA PATRICK LS4300",
+    "price": 93.69
+  },
+  {
+    "code": "Cod55524",
+    "title": "TAPA CUBA DREAN NEXT 6.06/8.12",
+    "price": 33.96
+  },
+  {
+    "code": "Cod55526",
+    "title": "TAPA CUBA DREAN GOLD 10.8/12.8",
+    "price": 34.74
+  },
+  {
+    "code": "Cod55527",
+    "title": "TAPA CUBA DREAN EXC 166",
+    "price": 73.29
+  },
+  {
+    "code": "Cod55564",
+    "title": "TAPA CUBA DR.EXC.BLUE 8.12P",
+    "price": 31.78
+  },
+  {
+    "code": "Cod57909",
+    "title": "TAPA CODINI ADVANCE 45-55",
+    "price": 6.65
+  },
+  {
+    "code": "Cod57995",
+    "title": "TAPA CODINI ACRILICA BCA M/V",
+    "price": 15.92
+  },
+  {
+    "code": "Cod2602",
+    "title": "TAPA BRONCE 1/4FH C/GUARNICION",
+    "price": 0.92
+  },
+  {
+    "code": "Cod55553",
+    "title": "TAPA BOMBA WH.AWG371/716  IMP",
+    "price": 15.39
+  },
+  {
+    "code": "Cod2612",
+    "title": "TAPA A.A 5/8 ROBINETE.SPLIT",
+    "price": 3.37
+  },
+  {
+    "code": "Cod2610",
+    "title": "TAPA A.A 3/8 ROBINETE.SPLIT",
+    "price": 1.85
+  },
+  {
+    "code": "Cod2609",
+    "title": "TAPA A.A 1/4 ROBINETE.SPLIT",
+    "price": 1.35
+  },
+  {
+    "code": "Cod2611",
+    "title": "TAPA A.A 1/2 ROBINETE.SPLIT",
+    "price": 2.53
+  },
+  {
+    "code": "Cod56859",
+    "title": "TAMBOR DREAN NEXT 70 LITROS",
+    "price": 82.76
+  },
+  {
+    "code": "Cod51456",
+    "title": "TAMBOR DREAN NEXT 54 LITROS",
+    "price": 82.76
+  },
+  {
+    "code": "Cod59035",
+    "title": "TAMBOR DREAN NEXT 47 LITROS",
+    "price": 82.76
+  },
+  {
+    "code": "Cod59036",
+    "title": "TAMBOR DREAN NEXT 40 LITROS",
+    "price": 82.76
+  },
+  {
+    "code": "Cod52663",
+    "title": "TAMBOR DREAN GOLD 10.8/12.8",
+    "price": 82.76
+  },
+  {
+    "code": "Cod55084",
+    "title": "TAMBOR DREAN BLUE 54 LITROS",
+    "price": 82.76
+  },
+  {
+    "code": "Cod54887",
+    "title": "TAMBOR DREAN BLUE 45/47 LITROS",
+    "price": 82.76
+  },
+  {
+    "code": "Cod56862",
+    "title": "TAMBOR DREAN BLUE 40 LITROS",
+    "price": 82.76
+  },
+  {
+    "code": "Cod35861",
+    "title": "SPLIT 9000F BGH PT INVERTER 220V",
+    "price": 2068.97
+  },
+  {
+    "code": "Cod35645",
+    "title": "SPLIT COOLTIME BGH CTSI67WCNX INV R32",
+    "price": 896.55
+  },
+  {
+    "code": "Cod35997",
+    "title": "SPLIT 6700W BGH BSI67WCNX INV R32",
+    "price": 965.52
+  },
+  {
+    "code": "Cod35596",
+    "title": "SPLIT 6500W BGH BSE65WCEW ON-OFF",
+    "price": 827.59
+  },
+  {
+    "code": "Cod35868",
+    "title": "SPLIT 5TR BGH CASSETE INVERTER",
+    "price": 2903.45
+  },
+  {
+    "code": "Cod35995",
+    "title": "SPLIT 5500W BGH BSI55WCNX INV R32",
+    "price": 827.59
+  },
+  {
+    "code": "Cod35865",
+    "title": "SPLIT 3TR BGH BAJO SILUE ON-OF",
+    "price": 1696.55
+  },
+  {
+    "code": "Cod35593",
+    "title": "SPLIT 3600W BGH BS35WCDW ON-OFF",
+    "price": 482.76
+  },
+  {
+    "code": "Cod35592",
+    "title": "SPLIT 2800W BGH BS26WCDW ON-OFF",
+    "price": 427.59
+  },
+  {
+    "code": "Cod35598",
+    "title": "SPLIT 18000F BGH PT ON-OFF",
+    "price": 2413.79
+  },
+  {
+    "code": "Cod35864",
+    "title": "SPLIT 18000F BGH PT INVERTER R32",
+    "price": 2827.59
+  },
+  {
+    "code": "Cod10652",
+    "title": "SPIN PUNZONADORA CT-9005-A",
+    "price": 41.55
+  },
+  {
+    "code": "Cod57535",
+    "title": "SOPORTE TAMB.WH.CAJA 680/WWI",
+    "price": 48.09
+  },
+  {
+    "code": "Cod56717",
+    "title": "SOPORTE TAMB.SAMSUNG WF1702",
+    "price": 31.5
+  },
+  {
+    "code": "Cod56735",
+    "title": "SOPORTE TAMB.SAMSUNG WD106 INV",
+    "price": 37.91
+  },
+  {
+    "code": "Cod56719",
+    "title": "SOPORTE TAMB.SAMSUNG MULTI TIP",
+    "price": 28.35
+  },
+  {
+    "code": "Cod56522",
+    "title": "SOPORTE TAMB.PHILCO PHLF060",
+    "price": 19.78
   }
 ]

@@ -1,13 +1,9 @@
 import json
 import logging
-from io import BytesIO
-from decimal import Decimal, InvalidOperation
-from datetime import datetime
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
-import pandas as pd
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.core.files.base import ContentFile
 
 from options.models import Options
 from product.models import ProductSupplier
@@ -26,12 +22,50 @@ def clean_decimal(value):
     if not value or value.lower() in {"nan", "none", "null"}:
         return None
 
-    value = value.replace("$", "").replace(",", ".").strip()
+    value = (
+        value
+        .replace("$", "")
+        .replace(" ", "")
+        .replace("\xa0", "")
+        .replace(",", ".")
+        .strip()
+    )
 
     try:
         return Decimal(value)
     except (InvalidOperation, ValueError):
         return None
+
+
+def calculate_price_wholesale_final(price_wholesale, supplier):
+    if price_wholesale is None:
+        return None
+
+    price = Decimal(str(price_wholesale))
+
+    if supplier:
+        # 1. Скидка
+        if supplier.discount:
+            discount = Decimal(str(supplier.discount))
+
+            # защита: если в базе 17 вместо 0.17
+            if discount > 1:
+                discount = discount / Decimal("100")
+
+            price = price * (Decimal("1") - discount)
+
+        # база для IVA и IB после скидки
+        calc_base = price
+
+        # 2. IVA 21%, если не включен
+        if not supplier.iva_in_price:
+            price += calc_base * Decimal("0.21")
+
+        # 3. IB CABA 3%, если не включен
+        if not supplier.ib_caba_in_prise:
+            price += calc_base * Decimal("0.03")
+
+    return price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 @csrf_exempt
@@ -108,9 +142,19 @@ def import_products(request):
                 )
                 continue
 
+            final_price = calculate_price_wholesale_final(price, supplier)
+
             product_price_obj.price_wholesale = price
+            product_price_obj.price_wholesale_final = final_price
             product_price_obj.supplier_prod_title = str(title).strip()[:255] if title else ""
-            product_price_obj.save(update_fields=["price_wholesale", "supplier_prod_title"])
+
+            product_price_obj.save(
+                update_fields=[
+                    "price_wholesale",
+                    "price_wholesale_final",
+                    "supplier_prod_title",
+                ]
+            )
 
             updated += 1
 

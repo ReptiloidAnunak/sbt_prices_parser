@@ -127,25 +127,30 @@ class ProductSupplier(models.Model):
         if self.price_wholesale is None:
             return None
 
-        base_price = Decimal(str(self.price_wholesale))
-        price = base_price
+        base = Decimal(str(self.price_wholesale))
+        price = base
 
-        if self.supplier:
-            if not self.supplier.iva_in_price:
-                price += base_price * Decimal("0.21")
+        supplier = self.supplier
 
-            if not self.supplier.ib_caba_in_prise:
-                price += base_price * Decimal("0.03")
+        if supplier:
+            # --- СКИДКА ---
+            if supplier.discount:
+                discount = Decimal(str(supplier.discount))
 
-            if self.supplier.discount is not None:
-                discount = Decimal(str(self.supplier.discount))
+                if discount > 1:
+                    discount = discount / Decimal("100")
 
-                if discount < Decimal("0"):
-                    discount = Decimal("0")
-                elif discount > Decimal("100"):
-                    discount = Decimal("100")
+                price = price * (Decimal("1") - discount)
 
-                price -= price * (discount / Decimal("100"))
+            calc_base = price
+
+            # --- IVA ---
+            if not supplier.iva_in_price:
+                price += calc_base * Decimal("0.21")
+
+            # --- IB CABA ---
+            if not supplier.ib_caba_in_prise:
+                price += calc_base * Decimal("0.03")
 
         return price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
