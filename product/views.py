@@ -1,9 +1,14 @@
 import json
 import logging
+from io import BytesIO
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+
+import pandas as pd
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.core.files.base import ContentFile
+from django.utils import timezone
 
 from options.models import Options
 from product.models import ProductSupplier
@@ -68,6 +73,40 @@ def calculate_price_wholesale_final(price_wholesale, supplier):
     return price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
+def save_supplier_json_excel(supplier, rows):
+    """
+    Сохраняет результат API-импорта в Excel в Supplier.price_list.
+    ВАЖНО: сохраняем через update(), чтобы не вызвать post_save и Celery.
+    """
+
+    if not rows:
+        return None
+
+    df = pd.DataFrame(rows)
+
+    output = BytesIO()
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="api_import")
+
+    output.seek(0)
+
+    filename = f"{supplier.name.lower().replace(' ', '_')}_api_import.xlsx"
+
+    supplier.price_list.save(
+        filename,
+        ContentFile(output.read()),
+        save=False,
+    )
+
+    Supplier.objects.filter(pk=supplier.pk).update(
+        price_list=supplier.price_list.name,
+        upt_price_at=timezone.now(),
+    )
+
+    return supplier.price_list.name
+
+
 @csrf_exempt
 def import_products(request):
     if request.method != "POST":
@@ -100,20 +139,29 @@ def import_products(request):
     skipped = 0
     errors = 0
 
+    excel_rows = []
+
     logger.info(
         f"Web import started | supplier={supplier.name} | "
         f"currency={supplier.currency} | total={len(products_json_lst)}"
     )
 
     for item in products_json_lst:
-        try:
-            code = item.get("code")
-            title = item.get("title")
-            raw_price = item.get("price")
-            currency = str(item.get("currency") or supplier.currency or "ARS").upper().strip()
+        code = item.get("code")
+        title = item.get("title")
+        raw_price = item.get("price")
+        currency = str(item.get("currency") or supplier.currency or "ARS").upper().strip()
 
+        price_ars = None
+        final_price = None
+        row_status = ""
+        row_error = ""
+
+        try:
             if not code:
                 skipped += 1
+                row_status = "skipped"
+                row_error = "Missing code"
                 logger.warning(f"Missing code | supplier={supplier.name} | item={item}")
                 continue
 
@@ -121,6 +169,8 @@ def import_products(request):
 
             if price is None:
                 skipped += 1
+                row_status = "skipped"
+                row_error = "Invalid price"
                 logger.warning(
                     f"Invalid price | supplier={supplier.name} | "
                     f"code={code} | title={title} | price={raw_price}"
@@ -130,6 +180,9 @@ def import_products(request):
             if currency == "USD":
                 price = price * dollar_rate
 
+            price_ars = price
+            final_price = calculate_price_wholesale_final(price, supplier)
+
             product_price_obj = ProductSupplier.objects.filter(
                 supplier=supplier,
                 supplier_prod_code=str(code).strip(),
@@ -137,12 +190,12 @@ def import_products(request):
 
             if not product_price_obj:
                 not_found += 1
+                row_status = "not_found"
+                row_error = "Code not found in ProductSupplier"
                 logger.warning(
                     f"Not found | supplier={supplier.name} | code={code} | title={title}"
                 )
                 continue
-
-            final_price = calculate_price_wholesale_final(price, supplier)
 
             product_price_obj.price_wholesale = price
             product_price_obj.price_wholesale_final = final_price
@@ -157,12 +210,34 @@ def import_products(request):
             )
 
             updated += 1
+            row_status = "updated"
 
         except Exception as e:
             errors += 1
+            row_status = "error"
+            row_error = str(e)
+
             logger.exception(
                 f"Import error | supplier={supplier.name} | item={item} | error={e}"
             )
+
+        finally:
+            excel_rows.append(
+                {
+                    "supplier": supplier.name,
+                    "code": code,
+                    "title_original": title,
+                    "price_original": raw_price,
+                    "currency": currency,
+                    "dollar_rate": dollar_rate,
+                    "price_ars": price_ars,
+                    "price_wholesale_final": final_price,
+                    "status": row_status,
+                    "error": row_error,
+                }
+            )
+
+    excel_file = save_supplier_json_excel(supplier, excel_rows)
 
     logger.info(
         f"Web import finished | supplier={supplier.name} | "
@@ -178,5 +253,7 @@ def import_products(request):
             "skipped": skipped,
             "errors": errors,
             "total": len(products_json_lst),
+            "excel_saved": bool(excel_file),
+            "excel_file": excel_file,
         }
     )
