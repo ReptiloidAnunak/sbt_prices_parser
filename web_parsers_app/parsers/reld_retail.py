@@ -120,13 +120,17 @@ def get_prods(html):
     products = []
 
     rows = soup.select('tr[id^="row-"]')
-
     logger.info(f"Found rows: {len(rows)}")
 
     for row in rows:
         try:
-            code_link = row.select_one('a[href*="articulo.php?cod_articulo="]')
-            title_link = row.select_one("td.col3 h3 a")
+            cols = row.select("td")
+
+            if len(cols) < 5:
+                continue
+
+            title_link = cols[1].select_one('a[href*="articulo.php?cod_articulo="]')
+            code_link = cols[2].select_one('a[href*="articulo.php?cod_articulo="]')
             price_cell = row.select_one("td.carrito-precio")
 
             if not code_link:
@@ -135,9 +139,12 @@ def get_prods(html):
             href = code_link.get("href", "")
             url = urljoin(BASE_URL, href)
 
-            code = clean_text(code_link.get_text()) or extract_code_from_url(href)
+            code = clean_text(code_link.get_text())
             title = clean_text(title_link.get_text()) if title_link else ""
             price = parse_price(price_cell.get_text()) if price_cell else None
+
+            if not code:
+                code = extract_code_from_url(href)
 
             if not code and not title:
                 continue
@@ -157,7 +164,6 @@ def get_prods(html):
             continue
 
     return products
-
 
 def save_to_json(prods, json_file=JSON_FILE):
     os.makedirs(os.path.dirname(json_file), exist_ok=True)
