@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import re
 import time
 
 from bs4 import BeautifulSoup
@@ -12,7 +13,7 @@ from web_parsers_app.logger import get_logger
 from web_parsers_app.settings import get_json_file, get_supplier_name
 from web_parsers_app.send_json import send_products_json
 
-PARSER_NAME = "norfrig"
+PARSER_NAME = "nordfrig"
 logger = get_logger(PARSER_NAME)
 
 JSON_FILE = get_json_file(PARSER_NAME)
@@ -55,6 +56,14 @@ def enter_nordfrig(page, login_data):
     logger.info("Login Norfrig: ✅")
 
 
+def extract_code_from_url(url):
+    if not url:
+        return ""
+
+    match = re.search(r"/ficha-(\d+)-", url)
+    return match.group(1) if match else ""
+
+
 def get_prods(html):
     soup = BeautifulSoup(html, "html.parser")
 
@@ -88,7 +97,7 @@ def get_prods(html):
 
             products.append(
                 {
-                    "code": "",
+                    "code": extract_code_from_url(url),
                     "url": url,
                     "title": title_tag.text.strip(),
                     "price": float(raw_price),

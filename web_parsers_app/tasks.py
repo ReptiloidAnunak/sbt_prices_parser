@@ -1,4 +1,5 @@
 from celery import shared_task, chain
+from django.utils import timezone
 
 from web_parsers_app.parsers.ansal import run as run_ansal
 from web_parsers_app.parsers.duna import run as run_duna
@@ -16,8 +17,43 @@ PARSERS = {
     "fijamom": run_fijamom,
     "nordfrig": run_nordfrig,
     "roma": run_roma,
-    "ansal": run_ansal,
 }
+
+
+def _mark_started(parser_name):
+    try:
+        from web_parsers_app.models import ParserJob
+        ParserJob.objects.filter(name=parser_name).update(
+            last_run_at=timezone.now(),
+            last_status="RUNNING",
+            last_error="",
+        )
+    except Exception:
+        pass
+
+
+def _mark_success(parser_name, result):
+    try:
+        from web_parsers_app.models import ParserJob
+        ParserJob.objects.filter(name=parser_name).update(
+            last_success_at=timezone.now(),
+            last_status="SUCCESS",
+            last_result=result,
+            last_error="",
+        )
+    except Exception:
+        pass
+
+
+def _mark_error(parser_name, error):
+    try:
+        from web_parsers_app.models import ParserJob
+        ParserJob.objects.filter(name=parser_name).update(
+            last_status="ERROR",
+            last_error=str(error),
+        )
+    except Exception:
+        pass
 
 
 @shared_task(
@@ -34,7 +70,36 @@ def run_web_parser(self, parser_name):
     if not parser_func:
         raise ValueError(f"Unknown parser: {parser_name}")
 
-    return parser_func()
+    _mark_started(parser_name)
+
+    try:
+        result = parser_func()
+        _mark_success(parser_name, result)
+        return result
+    except Exception as e:
+        _mark_error(parser_name, e)
+        raise
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=60,
+    retry_kwargs={"max_retries": 3},
+    soft_time_limit=36000,  # 10 часов для Ansal
+    time_limit=36600,      # 10 часов 10 минут hard limit
+)
+def run_ansal_parser(self):
+    parser_name = "ansal"
+    _mark_started(parser_name)
+
+    try:
+        result = run_ansal()
+        _mark_success(parser_name, result)
+        return result
+    except Exception as e:
+        _mark_error(parser_name, e)
+        raise
 
 
 @shared_task
@@ -46,5 +111,5 @@ def run_all_web_parsers():
         run_web_parser.si("fijamom"),
         run_web_parser.si("nordfrig"),
         run_web_parser.si("roma"),
-        run_web_parser.si("ansal"),
+        run_ansal_parser.si(),
     ).apply_async()

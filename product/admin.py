@@ -9,7 +9,16 @@ from mercado_libre.models import MercadoLibreProduct, MercadoLibreShop
 
 from django.contrib import admin
 from options.models import Options
+from django.contrib import admin, messages
+from django.http import FileResponse, Http404
+from django.shortcuts import redirect
+from django.urls import path, reverse
+from django.utils import timezone
+from django.utils.html import format_html
+from django.conf import settings
 
+from web_parsers_app.models import ParserJob
+from web_parsers_app.tasks import run_web_parser, run_ansal_parser
 
 @admin.register(Options)
 class OptionsAdmin(admin.ModelAdmin):
@@ -284,3 +293,102 @@ class MercadoLibreProductAdmin(admin.ModelAdmin):
             "fields": ("updated_at",)
         }),
     )
+
+
+@admin.register(ParserJob)
+class ParserJobAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "title",
+        "is_active",
+        "last_status",
+        "last_run_at",
+        "last_success_at",
+        "run_button",
+        "log_link",
+    )
+    list_filter = ("is_active", "last_status")
+    search_fields = ("name", "title")
+    readonly_fields = (
+        "last_run_at",
+        "last_success_at",
+        "last_status",
+        "last_result",
+        "last_error",
+    )
+
+    def get_urls(self):
+        custom_urls = [
+            path(
+                "run-parser/<int:parser_id>/",
+                self.admin_site.admin_view(self.run_parser),
+                name="web_parsers_app_parserjob_run_parser",
+            ),
+            path(
+                "log/<int:parser_id>/",
+                self.admin_site.admin_view(self.view_log),
+                name="web_parsers_app_parserjob_log",
+            ),
+        ]
+        return custom_urls + super().get_urls()
+
+    def run_button(self, obj):
+        if not obj.is_active:
+            return "Отключен"
+
+        url = reverse(
+            "admin:web_parsers_app_parserjob_run_parser",
+            args=[obj.pk],
+        )
+        return format_html('<a class="button" href="{}">Запустить</a>', url)
+    run_button.short_description = "Запуск"
+
+    def log_link(self, obj):
+        url = reverse(
+            "admin:web_parsers_app_parserjob_log",
+            args=[obj.pk],
+        )
+        return format_html('<a class="button" href="{}" target="_blank">Лог</a>', url)
+    log_link.short_description = "Лог"
+
+    def run_parser(self, request, parser_id):
+        parser = ParserJob.objects.get(pk=parser_id)
+        changelist_url = reverse("admin:web_parsers_app_parserjob_changelist")
+
+        if not parser.is_active:
+            self.message_user(request, f"{parser.title} отключен", level=messages.WARNING)
+            return redirect(changelist_url)
+
+        parser.last_run_at = timezone.now()
+        parser.last_status = "RUNNING"
+        parser.last_error = ""
+        parser.save(update_fields=["last_run_at", "last_status", "last_error"])
+
+        try:
+            if parser.name == "ansal":
+                run_ansal_parser.delay()
+            else:
+                run_web_parser.delay(parser.name)
+
+            self.message_user(request, f"{parser.title} запущен 🚀", level=messages.SUCCESS)
+        except Exception as e:
+            parser.last_status = "ERROR"
+            parser.last_error = str(e)
+            parser.save(update_fields=["last_status", "last_error"])
+            self.message_user(request, f"Ошибка запуска {parser.title}: {e}", level=messages.ERROR)
+
+        return redirect(changelist_url)
+
+    def view_log(self, request, parser_id):
+        parser = ParserJob.objects.get(pk=parser_id)
+        log_path = settings.BASE_DIR / "logs" / "parsers" / f"{parser.name}.log"
+
+        if not log_path.exists():
+            raise Http404("Log file not found")
+
+        return FileResponse(
+            open(log_path, "rb"),
+            content_type="text/plain; charset=utf-8",
+            as_attachment=False,
+            filename=f"{parser.name}.log",
+        )

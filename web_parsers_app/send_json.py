@@ -5,8 +5,10 @@ import requests
 
 API_URL = os.getenv(
     "API_URL",
-    "http://sbt_pars_server:8000/api/products/import/"
+    "http://sbt_pars_server:8000/api/products/import/",
 )
+API_HOST_HEADER = os.getenv("API_HOST_HEADER")
+REQUEST_TIMEOUT = int(os.getenv("API_REQUEST_TIMEOUT", "180"))
 
 
 def load_products(file_path):
@@ -39,11 +41,15 @@ def send_products_json(file_path, supplier):
         "products": products,
     }
 
+    headers = {}
+    if API_HOST_HEADER:
+        headers["Host"] = API_HOST_HEADER
+
     response = requests.post(
         API_URL,
         json=payload,
-        headers={"Host": "localhost"},
-        timeout=120,
+        headers=headers,
+        timeout=REQUEST_TIMEOUT,
     )
 
     if response.status_code >= 400:

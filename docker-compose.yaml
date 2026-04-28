@@ -13,6 +13,23 @@ services:
       - data_base:/var/lib/postgresql/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7
+    container_name: sbt_pars_redis
+    restart: always
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   sbt_pars_server:
     container_name: sbt_pars_server
@@ -28,35 +45,34 @@ services:
       - ./staticfiles:/app/staticfiles
       - ./media:/app/media
     depends_on:
-      - sbt_pars_db
-      - redis
+      sbt_pars_db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - app-network
     env_file:
       - .env
     restart: always
 
-  redis:
-    image: redis:7
-    container_name: sbt_pars_redis
-    restart: always
-    networks:
-      - app-network
-
   celery_worker:
     container_name: sbt_pars_celery_worker
     build:
       context: .
       dockerfile: Dockerfile
-    command: celery -A api_server worker -l info --concurrency=1
+    entrypoint: ["./celery_entrypoint.sh"]
+    command: ["celery", "-A", "api_server", "worker", "-l", "info", "--concurrency=1"]
     volumes:
       - .:/app
       - ./logs:/app/logs
       - ./media:/app/media
     depends_on:
-      - redis
-      - sbt_pars_db
-      - sbt_pars_server
+      sbt_pars_db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      sbt_pars_server:
+        condition: service_started
     networks:
       - app-network
     env_file:
@@ -71,16 +87,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: celery -A api_server beat -l info
+    entrypoint: ["./celery_entrypoint.sh"]
+    command: ["celery", "-A", "api_server", "beat", "-l", "info"]
     volumes:
       - .:/app
       - ./logs:/app/logs
       - ./media:/app/media
     depends_on:
-      - redis
-      - sbt_pars_db
-      - sbt_pars_server
-      - celery_worker
+      sbt_pars_db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      sbt_pars_server:
+        condition: service_started
+      celery_worker:
+        condition: service_started
     networks:
       - app-network
     env_file:

@@ -16,7 +16,7 @@ JSON_FILES = {
     "electrocity": DATA_DIR / "electrocity_products.json",
     "electrofrig": DATA_DIR / "electrofrig_products.json",
     "fijamom": DATA_DIR / "fijamom_products.json",
-    "norfrig": DATA_DIR / "norfrig_products.json",
+    "nordfrig": DATA_DIR / "nordfrig_products.json",
     "roma": DATA_DIR / "roma_products.json",
 }
 
@@ -27,7 +27,7 @@ SUPPLIER_NAMES = {
     "electrocity": "Electrocity",
     "electrofrig": "Electrofrig",
     "fijamom": "Fijamom",
-    "norfrig": "Norfrig",
+    "nordfrig": "Norfrig",
     "roma": "Roma Repuestos insumos",
 }
 
@@ -38,6 +38,7 @@ def get_json_file(parser_name: str) -> Path:
 
 def get_supplier_name(parser_name: str) -> str:
     return SUPPLIER_NAMES[parser_name]
+
 
 def get_screen_shot_path(parser_name):
     screenshot_dir = LOGS_DIR / "screens" / parser_name

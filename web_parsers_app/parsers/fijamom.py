@@ -166,6 +166,8 @@ def run():
 
             send_products_json(JSON_FILE, SUPPLIER_NAME)
 
+            logger.info('Pansing finished')
+
             return {
                 "status": "ok",
                 "supplier": SUPPLIER_NAME,
