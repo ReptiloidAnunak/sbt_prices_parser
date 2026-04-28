@@ -51,6 +51,10 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "api_server.urls"
 
+# ВАЖНО:
+# Для кастомных шаблонов админки, например:
+# templates/admin/product/product/change_list.html
+# нужна строка DIRS: [BASE_DIR / "templates"]
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -112,7 +116,6 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "America/Argentina/Buenos_Aires"
 CELERY_ENABLE_UTC = False
 
-# Если Redis временно пропадает, worker пытается переподключиться.
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_BROKER_CONNECTION_RETRY = True
 CELERY_BROKER_TRANSPORT_OPTIONS = {

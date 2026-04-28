@@ -123,6 +123,8 @@ class ProductSupplier(models.Model):
         verbose_name="Время обновления"
     )
 
+    # link = models.URLField(blank=True, null=True)
+
     def calculate_price_wholesale_final(self):
         if self.price_wholesale is None:
             return None

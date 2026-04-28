@@ -10,12 +10,15 @@ from mercado_libre.models import MercadoLibreProduct, MercadoLibreShop
 from django.contrib import admin
 from options.models import Options
 from django.contrib import admin, messages
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import redirect
 from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.conf import settings
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment
+from openpyxl.utils import get_column_letter
 
 from web_parsers_app.models import ParserJob
 from web_parsers_app.tasks import run_web_parser, run_ansal_parser
@@ -86,6 +89,8 @@ class ProductSupplierInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
+    change_list_template = "admin/product/product/change_list.html"
+
     list_display = (
         "code_sbt",
         "title_sbt",
@@ -108,6 +113,102 @@ class ProductAdmin(admin.ModelAdmin):
     )
 
     inlines = [ProductSupplierInline]
+
+
+    def get_urls(self):
+        custom_urls = [
+            path(
+                "export-supplier-matrix/",
+                self.admin_site.admin_view(self.export_supplier_matrix_excel),
+                name="product_product_export_supplier_matrix",
+            ),
+        ]
+        return custom_urls + super().get_urls()
+
+    def export_supplier_matrix_excel(self, request):
+        suppliers = list(Supplier.objects.order_by("name"))
+
+        headers = [
+            "ID элемента",
+            "Код [KOD]",
+            "Категория товара",
+            "Наименование",
+            'Цена "Розница AR" SBT',
+        ]
+
+        for supplier in suppliers:
+            headers.extend([
+                f"{supplier.name} название",
+                f"Цена {supplier.name} Оптовая",
+                f"Цена {supplier.name} Розничная",
+            ])
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Прайс поставщиков"
+        ws.append(headers)
+
+        for cell in ws[1]:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+        qs = Product.objects.prefetch_related("product_suppliers__supplier").order_by("title_sbt")
+
+        for product in qs:
+            supplier_prices = {
+                item.supplier_id: item
+                for item in product.product_suppliers.all()
+            }
+
+            row = [
+                product.id,
+                product.code_sbt,
+                product.category,
+                product.title_sbt,
+                product.price_sbt,
+            ]
+
+            for supplier in suppliers:
+                item = supplier_prices.get(supplier.id)
+                if item:
+                    row.extend([
+                        item.supplier_prod_title,
+                        item.price_wholesale_final,
+                        item.price_retail,
+                    ])
+                else:
+                    row.extend(["", "", ""])
+
+            ws.append(row)
+
+        ws.freeze_panes = "F2"
+        ws.auto_filter.ref = ws.dimensions
+
+        widths = {1: 12, 2: 14, 3: 22, 4: 42, 5: 18}
+
+        for col_idx in range(1, ws.max_column + 1):
+            letter = get_column_letter(col_idx)
+            if col_idx in widths:
+                ws.column_dimensions[letter].width = widths[col_idx]
+            else:
+                position = (col_idx - 6) % 3
+                ws.column_dimensions[letter].width = 34 if position == 0 else 18
+
+        for row in ws.iter_rows(min_row=2):
+            for cell in row:
+                cell.alignment = Alignment(vertical="top", wrap_text=False)
+
+        for row in ws.iter_rows(min_row=2, min_col=5, max_col=ws.max_column):
+            for cell in row:
+                if cell.value not in (None, ""):
+                    cell.number_format = '#,##0.00'
+
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = 'attachment; filename="supplier_prices_matrix.xlsx"'
+        wb.save(response)
+        return response
 
 
 @admin.register(ProductSupplier)
