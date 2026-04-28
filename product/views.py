@@ -49,24 +49,19 @@ def calculate_price_wholesale_final(price_wholesale, supplier):
     price = Decimal(str(price_wholesale))
 
     if supplier:
-        # 1. Скидка
         if supplier.discount:
             discount = Decimal(str(supplier.discount))
 
-            # защита: если в базе 17 вместо 0.17
             if discount > 1:
                 discount = discount / Decimal("100")
 
             price = price * (Decimal("1") - discount)
 
-        # база для IVA и IB после скидки
         calc_base = price
 
-        # 2. IVA 21%, если не включен
         if not supplier.iva_in_price:
             price += calc_base * Decimal("0.21")
 
-        # 3. IB CABA 3%, если не включен
         if not supplier.ib_caba_in_prise:
             price += calc_base * Decimal("0.03")
 
@@ -74,11 +69,6 @@ def calculate_price_wholesale_final(price_wholesale, supplier):
 
 
 def save_supplier_json_excel(supplier, rows):
-    """
-    Сохраняет результат API-импорта в Excel в Supplier.price_list.
-    ВАЖНО: сохраняем через update(), чтобы не вызвать post_save и Celery.
-    """
-
     if not rows:
         return None
 
@@ -150,7 +140,9 @@ def import_products(request):
         code = item.get("code")
         title = item.get("title")
         raw_price = item.get("price")
-        currency = str(item.get("currency") or supplier.currency or "ARS").upper().strip()
+        currency = str(
+            item.get("currency") or supplier.currency or "ARS"
+        ).upper().strip()
 
         price_ars = None
         final_price = None
@@ -158,48 +150,64 @@ def import_products(request):
         row_error = ""
 
         try:
-            if not code:
-                skipped += 1
-                row_status = "skipped"
-                row_error = "Missing code"
-                logger.warning(f"Missing code | supplier={supplier.name} | item={item}")
-                continue
-
+            # 1. Цена считается ВСЕГДА, даже если нет кода
             price = clean_decimal(raw_price)
 
             if price is None:
                 skipped += 1
                 row_status = "skipped"
                 row_error = "Invalid price"
+
                 logger.warning(
                     f"Invalid price | supplier={supplier.name} | "
                     f"code={code} | title={title} | price={raw_price}"
                 )
                 continue
 
+            # 2. USD переводим в ARS
             if currency == "USD":
                 price = price * dollar_rate
 
             price_ars = price
             final_price = calculate_price_wholesale_final(price, supplier)
 
+            # 3. Код проверяем ПОСЛЕ расчёта цены
+            if not code:
+                skipped += 1
+                row_status = "skipped"
+                row_error = "Missing code"
+
+                logger.warning(
+                    f"Missing code | supplier={supplier.name} | "
+                    f"title={title} | price_ars={price_ars} | "
+                    f"final_price={final_price}"
+                )
+                continue
+
+            code = str(code).strip()
+
             product_price_obj = ProductSupplier.objects.filter(
                 supplier=supplier,
-                supplier_prod_code=str(code).strip(),
+                supplier_prod_code=code,
             ).first()
 
             if not product_price_obj:
                 not_found += 1
                 row_status = "not_found"
                 row_error = "Code not found in ProductSupplier"
+
                 logger.warning(
-                    f"Not found | supplier={supplier.name} | code={code} | title={title}"
+                    f"Not found | supplier={supplier.name} | "
+                    f"code={code} | title={title} | "
+                    f"price_ars={price_ars} | final_price={final_price}"
                 )
                 continue
 
             product_price_obj.price_wholesale = price
             product_price_obj.price_wholesale_final = final_price
-            product_price_obj.supplier_prod_title = str(title).strip()[:255] if title else ""
+            product_price_obj.supplier_prod_title = (
+                str(title).strip()[:255] if title else ""
+            )
 
             product_price_obj.save(
                 update_fields=[
@@ -218,7 +226,8 @@ def import_products(request):
             row_error = str(e)
 
             logger.exception(
-                f"Import error | supplier={supplier.name} | item={item} | error={e}"
+                f"Import error | supplier={supplier.name} | "
+                f"item={item} | error={e}"
             )
 
         finally:
@@ -241,7 +250,8 @@ def import_products(request):
 
     logger.info(
         f"Web import finished | supplier={supplier.name} | "
-        f"updated={updated} | not_found={not_found} | skipped={skipped} | errors={errors}"
+        f"updated={updated} | not_found={not_found} | "
+        f"skipped={skipped} | errors={errors}"
     )
 
     return JsonResponse(
