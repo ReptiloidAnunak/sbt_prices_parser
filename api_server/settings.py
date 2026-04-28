@@ -19,7 +19,7 @@ DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = [
     h for h in os.getenv(
         "DJANGO_ALLOWED_HOSTS",
-        "localhost,127.0.0.1,0.0.0.0,sbt_pars_server",
+        "localhost,127.0.0.1,0.0.0.0,sbt_pars_server,testserver",
     ).split(",")
     if h
 ]
@@ -149,6 +149,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "web_parsers_app.tasks.run_web_parser",
         "schedule": crontab(hour=3, minute=0),
         "args": ("nordfrig",),
+    },
+    "run-reld-retail-every-night": {
+        "task": "web_parsers_app.tasks.run_web_parser",
+        "schedule": crontab(hour=3, minute=15),
+        "args": ("reld_retail",),
     },
     "run-roma-every-night": {
         "task": "web_parsers_app.tasks.run_web_parser",

@@ -11,19 +11,19 @@ django.setup()
 
 
 from web_parsers_app.parsers.ansal import run as run_ansal
-# from web_parsers_app.parsers.duna import run as run_duna
-# from web_parsers_app.parsers.electrocity import run as run_electrocity
-# from web_parsers_app.parsers.electrofrig import run as run_electrofrig
-# from web_parsers_app.parsers.fijamom import run as run_fijamom
-# from web_parsers_app.parsers.nordfrig import run as run_nordfrig
-# from web_parsers_app.parsers.roma import run as run_roma
+from web_parsers_app.parsers.duna import run as run_duna
+from web_parsers_app.parsers.electrocity import run as run_electrocity
+from web_parsers_app.parsers.electrofrig import run as run_electrofrig
+from web_parsers_app.parsers.fijamom import run as run_fijamom
+from web_parsers_app.parsers.nordfrig import run as run_nordfrig
+from web_parsers_app.parsers.roma import run as run_roma
+from web_parsers_app.parsers.reld_retail import run as run_reld_retail
 import logging
 
 
 logger = logging.getLogger(__name__)
 
-
-logger.info('Web parser module is connected')
+logger.info("Web parser module is connected")
 
 PARSERS = {
     "ansal": run_ansal,
@@ -33,6 +33,7 @@ PARSERS = {
     "fijamom": run_fijamom,
     "nordfrig": run_nordfrig,
     "roma": run_roma,
+    "reld_retail": run_reld_retail,
 }
 
 
@@ -54,6 +55,7 @@ def main():
     if len(sys.argv) < 2:
         print("Usage:")
         print("  python web_parsers_app/main.py ansal")
+        print("  python web_parsers_app/main.py reld_retail")
         print("  python web_parsers_app/main.py all")
         print("Available parsers:", ", ".join(PARSERS.keys()))
         return

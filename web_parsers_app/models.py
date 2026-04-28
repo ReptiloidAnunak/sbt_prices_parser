@@ -9,6 +9,7 @@ PARSER_CHOICES = [
     ("nordfrig", "Nordfrig"),
     ("roma", "Roma"),
     ("ansal", "Ansal"),
+    ("reld_retail", "Reld retail"),
 ]
 
 

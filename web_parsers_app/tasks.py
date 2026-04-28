@@ -8,6 +8,7 @@ from web_parsers_app.parsers.electrofrig import run as run_electrofrig
 from web_parsers_app.parsers.fijamom import run as run_fijamom
 from web_parsers_app.parsers.nordfrig import run as run_nordfrig
 from web_parsers_app.parsers.roma import run as run_roma
+from web_parsers_app.parsers.reld_retail import run as run_reld_retail
 
 
 PARSERS = {
@@ -17,6 +18,7 @@ PARSERS = {
     "fijamom": run_fijamom,
     "nordfrig": run_nordfrig,
     "roma": run_roma,
+    "reld_retail": run_reld_retail,
 }
 
 
@@ -111,5 +113,6 @@ def run_all_web_parsers():
         run_web_parser.si("fijamom"),
         run_web_parser.si("nordfrig"),
         run_web_parser.si("roma"),
+        run_web_parser.si("reld_retail"),
         run_ansal_parser.si(),
     ).apply_async()

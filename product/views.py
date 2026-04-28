@@ -17,6 +17,8 @@ from supplier.models import Supplier
 
 logger = logging.getLogger(__name__)
 
+VALID_PRICE_TYPES = {"wholesale", "retail"}
+
 
 def clean_decimal(value):
     if value is None:
@@ -30,11 +32,18 @@ def clean_decimal(value):
     value = (
         value
         .replace("$", "")
+        .replace("ARS", "")
+        .replace("U$S", "")
+        .replace("USD", "")
         .replace(" ", "")
         .replace("\xa0", "")
-        .replace(",", ".")
         .strip()
     )
+
+    # Если прилетело "6.194,66" — это аргентинский формат.
+    # Если прилетело "6194.66" — это уже нормальный float/decimal формат.
+    if "," in value:
+        value = value.replace(".", "").replace(",", ".")
 
     try:
         return Decimal(value)
@@ -97,6 +106,24 @@ def save_supplier_json_excel(supplier, rows):
     return supplier.price_list.name
 
 
+def detect_price_type(data):
+    price_type = str(data.get("price_type") or "").lower().strip()
+    parser_name = str(data.get("parser_name") or "").lower().strip()
+
+    if price_type:
+        if price_type not in VALID_PRICE_TYPES:
+            raise ValueError(
+                f"Invalid price_type: {price_type}. "
+                f"Allowed: {', '.join(sorted(VALID_PRICE_TYPES))}"
+            )
+        return price_type
+
+    if parser_name.endswith("_retail"):
+        return "retail"
+
+    return "wholesale"
+
+
 @csrf_exempt
 def import_products(request):
     if request.method != "POST":
@@ -107,7 +134,13 @@ def import_products(request):
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
+    try:
+        price_type = detect_price_type(data)
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
     supplier_name = data.get("supplier")
+    parser_name = data.get("parser_name") or ""
     products_json_lst = data.get("products", [])
 
     if not supplier_name:
@@ -133,6 +166,7 @@ def import_products(request):
 
     logger.info(
         f"Web import started | supplier={supplier.name} | "
+        f"parser={parser_name} | price_type={price_type} | "
         f"currency={supplier.currency} | total={len(products_json_lst)}"
     )
 
@@ -160,6 +194,7 @@ def import_products(request):
 
                 logger.warning(
                     f"Invalid price | supplier={supplier.name} | "
+                    f"parser={parser_name} | price_type={price_type} | "
                     f"code={code} | title={title} | price={raw_price}"
                 )
                 continue
@@ -169,7 +204,9 @@ def import_products(request):
                 price = price * dollar_rate
 
             price_ars = price
-            final_price = calculate_price_wholesale_final(price, supplier)
+
+            if price_type == "wholesale":
+                final_price = calculate_price_wholesale_final(price, supplier)
 
             # 3. Код проверяем ПОСЛЕ расчёта цены
             if not code:
@@ -179,6 +216,7 @@ def import_products(request):
 
                 logger.warning(
                     f"Missing code | supplier={supplier.name} | "
+                    f"parser={parser_name} | price_type={price_type} | "
                     f"title={title} | price_ars={price_ars} | "
                     f"final_price={final_price}"
                 )
@@ -198,24 +236,34 @@ def import_products(request):
 
                 logger.warning(
                     f"Not found | supplier={supplier.name} | "
+                    f"parser={parser_name} | price_type={price_type} | "
                     f"code={code} | title={title} | "
                     f"price_ars={price_ars} | final_price={final_price}"
                 )
                 continue
 
-            product_price_obj.price_wholesale = price
-            product_price_obj.price_wholesale_final = final_price
             product_price_obj.supplier_prod_title = (
                 str(title).strip()[:255] if title else ""
             )
 
-            product_price_obj.save(
-                update_fields=[
-                    "price_wholesale",
-                    "price_wholesale_final",
-                    "supplier_prod_title",
-                ]
-            )
+            if price_type == "retail":
+                product_price_obj.price_retail = price
+                product_price_obj.save(
+                    update_fields=[
+                        "price_retail",
+                        "supplier_prod_title",
+                    ]
+                )
+            else:
+                product_price_obj.price_wholesale = price
+                product_price_obj.price_wholesale_final = final_price
+                product_price_obj.save(
+                    update_fields=[
+                        "price_wholesale",
+                        "price_wholesale_final",
+                        "supplier_prod_title",
+                    ]
+                )
 
             updated += 1
             row_status = "updated"
@@ -227,6 +275,7 @@ def import_products(request):
 
             logger.exception(
                 f"Import error | supplier={supplier.name} | "
+                f"parser={parser_name} | price_type={price_type} | "
                 f"item={item} | error={e}"
             )
 
@@ -234,6 +283,8 @@ def import_products(request):
             excel_rows.append(
                 {
                     "supplier": supplier.name,
+                    "parser_name": parser_name,
+                    "price_type": price_type,
                     "code": code,
                     "title_original": title,
                     "price_original": raw_price,
@@ -250,6 +301,7 @@ def import_products(request):
 
     logger.info(
         f"Web import finished | supplier={supplier.name} | "
+        f"parser={parser_name} | price_type={price_type} | "
         f"updated={updated} | not_found={not_found} | "
         f"skipped={skipped} | errors={errors}"
     )
@@ -258,6 +310,8 @@ def import_products(request):
         {
             "status": "ok",
             "supplier": supplier.name,
+            "parser_name": parser_name,
+            "price_type": price_type,
             "updated": updated,
             "not_found": not_found,
             "skipped": skipped,
