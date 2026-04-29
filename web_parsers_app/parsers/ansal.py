@@ -68,13 +68,16 @@ def enter_ansal(page, login_data):
 
 
 def parse_price(price_text):
-    logger.warning(f'price_orig: {price_text}')
+    logger.info(f"price_orig: {price_text}")
+
     if not price_text:
         return None
 
     value = str(price_text).strip()
+
     value = (
-        value.replace("$", "")
+        value
+        .replace("$", "")
         .replace("ARS", "")
         .replace("U$S", "")
         .replace("USD", "")
@@ -87,22 +90,32 @@ def parse_price(price_text):
 
     if not value:
         return None
-
     if "," in value and "." in value:
         if value.find(",") < value.find("."):
-            value = value.replace(",", "")          # 78,933.12 -> 78933.12
+            value = value.replace(",", "")
         else:
-            value = value.replace(".", "").replace(",", ".")  # 344.145,60 -> 344145.60
+            value = value.replace(".", "").replace(",", ".")
+
     elif "," in value:
         value = value.replace(",", ".")
+
     elif "." in value:
         parts = value.split(".")
-        if len(parts[-1]) == 3:
-            value = value.replace(".", "")          # 207.648 -> 207648
+
+        # 207.648 -> 207648
+        if len(parts) > 1 and len(parts[-1]) == 3:
+            value = value.replace(".", "")
 
     try:
-        return str(Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+        parsed = Decimal(value).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+        logger.info(f"price_parsed: {parsed}")
+        return str(parsed)
+
     except (InvalidOperation, ValueError):
+        logger.warning(f"Could not parse Ansal price: raw={price_text}, cleaned={value}")
         return None
 
 
