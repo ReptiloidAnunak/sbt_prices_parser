@@ -19,6 +19,7 @@ JSON_FILES = {
     "nordfrig": DATA_DIR / "nordfrig_products.json",
     "roma": DATA_DIR / "roma_products.json",
     "reld_retail": DATA_DIR / "reld_retail_products.json",
+    "bellini_retail": DATA_DIR / "bellini_retail.json",
 }
 
 
@@ -30,9 +31,8 @@ SUPPLIER_NAMES = {
     "fijamom": "Fijamom",
     "nordfrig": "Norfrig",
     "roma": "Roma Repuestos insumos",
-    # ВАЖНО: это тот же Supplier из ProductSupplier, просто обновляем его price_retail.
-    # Если в базе поставщик называется иначе, поменяй только это значение.
-    "reld_retail": "Reld",
+    "reld_retail": "Reld retail",
+    "bellini_retail": "Bellini retail",
 }
 
 
