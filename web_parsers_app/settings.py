@@ -31,8 +31,8 @@ SUPPLIER_NAMES = {
     "fijamom": "Fijamom",
     "nordfrig": "Norfrig",
     "roma": "Roma Repuestos insumos",
-    "reld_retail": "Reld retail",
-    "bellini_retail": "Bellini retail",
+    "reld_retail": "Reld",
+    "bellini_retail": "Bellini",
 }
 
 
