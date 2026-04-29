@@ -19,7 +19,7 @@ JSON_FILES = {
     "nordfrig": DATA_DIR / "nordfrig_products.json",
     "roma": DATA_DIR / "roma_products.json",
     "reld_retail": DATA_DIR / "reld_retail_products.json",
-    "bellini_retail": DATA_DIR / "bellini_retail.json",
+    "bellini_retail": DATA_DIR / "bellini_retail_products.json",
 }
 
 
