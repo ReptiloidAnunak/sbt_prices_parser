@@ -9,7 +9,8 @@ from web_parsers_app.parsers.fijamom import run as run_fijamom
 from web_parsers_app.parsers.nordfrig import run as run_nordfrig
 from web_parsers_app.parsers.roma import run as run_roma
 from web_parsers_app.parsers.reld_retail import run as run_reld_retail
-
+from web_parsers_app.parsers.bellini_retail import run as run_bellini_retail
+from web_parsers_app.parsers.refrigeracion_norte_retail import run as run_refrigeracion_norte_retail
 
 PARSERS = {
     "duna": run_duna,
@@ -19,6 +20,8 @@ PARSERS = {
     "nordfrig": run_nordfrig,
     "roma": run_roma,
     "reld_retail": run_reld_retail,
+    "bellini_retail": run_bellini_retail,
+    "refrigeracion_norte_retail": run_refrigeracion_norte_retail,
 }
 
 

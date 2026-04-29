@@ -18,6 +18,16 @@ logger = get_logger(PARSER_NAME)
 JSON_FILE = get_json_file(PARSER_NAME)
 SUPPLIER_NAME = get_supplier_name(PARSER_NAME)
 
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "es-AR,es;q=0.9,en;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Connection": "keep-alive",
+}
 
 categories_links = [
     "https://www.bellinihnos.com.ar/categoria-producto/compresores/",
@@ -33,29 +43,37 @@ categories_links = [
 
 
 def get_products(link):
-    page_html = requests.get(link)
-    soup = BeautifulSoup(page_html.content, 'html.parser')
+    page_html = requests.get(link, headers=HEADERS, timeout=30)
+    page_html.raise_for_status()
 
-    prods_grid = soup.find('div', class_="products")
+    soup = BeautifulSoup(page_html.content, "html.parser")
+
+    prods_grid = soup.find("div", class_="products")
     if not prods_grid:
         logger.warning(f"No products grid: {link}")
         return []
 
-    prods_cards = prods_grid.find_all('div', class_='product-small')
+    prods_cards = prods_grid.find_all("div", class_="product-small")
 
     result = []
 
     for card in prods_cards:
-        sku_div = card.find('div', class_='custom-product-sku')
-        text_box = card.find('div', class_='box-text')
+        sku_div = card.find("div", class_="custom-product-sku")
+        text_box = card.find("div", class_="box-text")
 
         if not sku_div or not text_box:
             continue
 
+        title_tag = text_box.find("a")
+        price_tag = text_box.find("bdi")
+
+        if not title_tag or not price_tag:
+            continue
+
         sku = sku_div.text.strip()
-        title = text_box.find('a').text.strip()
-        url = text_box.find('a')['href']
-        price = text_box.find('bdi').text.strip().strip('$').strip().replace(',', '')
+        title = title_tag.text.strip()
+        url = title_tag["href"]
+        price = price_tag.text.strip().strip("$").strip().replace(",", "")
 
         result.append({
             "code": sku,
@@ -84,7 +102,7 @@ def clear_json(json_file=JSON_FILE):
 
 
 def run():
-    logger.info("Bellini parser started")
+    logger.info("Bellini retail parser started")
 
     clear_json()
 

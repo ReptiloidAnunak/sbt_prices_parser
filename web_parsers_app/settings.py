@@ -20,6 +20,7 @@ JSON_FILES = {
     "roma": DATA_DIR / "roma_products.json",
     "reld_retail": DATA_DIR / "reld_retail_products.json",
     "bellini_retail": DATA_DIR / "bellini_retail_products.json",
+    "refrigeracion_norte_retail": DATA_DIR / "refrigeracion_norte_retail_products.json",
 }
 
 
@@ -33,6 +34,7 @@ SUPPLIER_NAMES = {
     "roma": "Roma Repuestos insumos",
     "reld_retail": "Reld",
     "bellini_retail": "Bellini",
+    "refrigeracion_norte_retail": "Refrigeracion Norte",
 }
 
 

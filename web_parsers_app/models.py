@@ -10,6 +10,8 @@ PARSER_CHOICES = [
     ("roma", "Roma"),
     ("ansal", "Ansal"),
     ("reld_retail", "Reld retail"),
+    ("bellini_retail", "Bellini retail"),
+    ("refrigeracion_norte_retail", "Refrigeracion Norte retail"),
 ]
 
 
