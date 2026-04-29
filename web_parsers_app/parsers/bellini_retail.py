@@ -11,7 +11,7 @@ from web_parsers_app.send_json import send_products_json
 from web_parsers_app.settings import get_json_file, get_supplier_name
 
 
-PARSER_NAME = "bellini"
+PARSER_NAME = "bellini_retail"
 
 logger = get_logger(PARSER_NAME)
 
