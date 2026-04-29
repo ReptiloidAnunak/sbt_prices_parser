@@ -2,14 +2,18 @@ import json
 import os
 import random
 import time
-
+import re
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
 from playwright._impl._errors import TimeoutError, Error
-
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from supplier.models import Supplier
 from web_parsers_app.logger import get_logger
-from web_parsers_app.settings import get_json_file, get_supplier_name, get_screen_shot_path
+from web_parsers_app.settings import (
+    get_json_file,
+    get_supplier_name,
+    get_screen_shot_path,
+)
 from web_parsers_app.send_json import send_products_json
 
 
@@ -64,20 +68,41 @@ def enter_ansal(page, login_data):
 
 
 def parse_price(price_text):
+    logger.warning(f'price_orig: {price_text}')
     if not price_text:
         return None
 
-    price_text = (
-        str(price_text)
-        .replace("$", "")
-        .replace(".", "")
-        .replace(",", ".")
+    value = str(price_text).strip()
+    value = (
+        value.replace("$", "")
+        .replace("ARS", "")
+        .replace("U$S", "")
+        .replace("USD", "")
+        .replace(" ", "")
+        .replace("\xa0", "")
         .strip()
     )
 
+    value = re.sub(r"[^\d,.-]", "", value)
+
+    if not value:
+        return None
+
+    if "," in value and "." in value:
+        if value.find(",") < value.find("."):
+            value = value.replace(",", "")          # 78,933.12 -> 78933.12
+        else:
+            value = value.replace(".", "").replace(",", ".")  # 344.145,60 -> 344145.60
+    elif "," in value:
+        value = value.replace(",", ".")
+    elif "." in value:
+        parts = value.split(".")
+        if len(parts[-1]) == 3:
+            value = value.replace(".", "")          # 207.648 -> 207648
+
     try:
-        return float(price_text)
-    except ValueError:
+        return str(Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+    except (InvalidOperation, ValueError):
         return None
 
 
@@ -142,6 +167,7 @@ def get_prods(html):
                     "title": title,
                     "price": price,
                     "url": url,
+                    "currency": "ARS",
                 }
             )
 
@@ -183,10 +209,7 @@ def clear_json(json_file=JSON_FILE):
 
 def save_debug_files(page, page_num):
     try:
-        page.screenshot(
-            path=str(SCREENSHOT_PATH),
-            full_page=True,
-        )
+        page.screenshot(path=str(SCREENSHOT_PATH), full_page=True)
         logger.info(f"Screenshot saved: {SCREENSHOT_PATH}")
     except Exception as e:
         logger.warning(f"Failed to save screenshot: {e}")
@@ -252,50 +275,55 @@ def collect_prods(page):
         sleep_random(5, 10)
 
     logger.info(f"Parsing finished. Total products: {total_products}")
-
     return total_products
 
 
-def run():
-    try: 
-        logger.info("Ansal parser started")
+def run(retail=False):
+    logger.info("Ansal parser started")
+    logger.info(f"Mode: {'Retail' if retail else 'Wholesale'}")
 
+    clear_json()
+
+    login_data = None
+
+    if not retail:
         login_data = load_login_pwd()
-        clear_json()
 
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
+    total_products = 0
 
-            try:
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        try:
+            if login_data:
                 enter_ansal(page, login_data)
-                total_products = collect_prods(page)
 
-                send_products_json(JSON_FILE, SUPPLIER_NAME)
+            total_products = collect_prods(page)
 
-                return {
-                    "status": "ok",
-                    "supplier": SUPPLIER_NAME,
-                    "products": total_products,
-                }
+            send_products_json(
+                JSON_FILE,
+                SUPPLIER_NAME,
+                parser_name=PARSER_NAME,
+                price_type="retail" if retail else "wholesale",
+            )
 
-            except Exception as e:
-                logger.exception(f"Ansal parser failed: {e}")
-                save_debug_files(page, 0)
-                raise
+            return {
+                "status": "ok",
+                "supplier": SUPPLIER_NAME,
+                "parser_name": PARSER_NAME,
+                "price_type": "retail" if retail else "wholesale",
+                "products": total_products,
+            }
 
-            finally:
-                browser.close()
-    except Exception:
-        send_products_json(JSON_FILE, SUPPLIER_NAME)
+        except Exception as e:
+            logger.exception(f"Ansal parser failed: {e}")
+            save_debug_files(page, 0)
+            raise
 
-        return {
-            "status": "ok",
-            "supplier": SUPPLIER_NAME,
-            "products": total_products,
-        }
+        finally:
+            browser.close()
+
 
 if __name__ == "__main__":
-    
-        run()
-    
+    run()

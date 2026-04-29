@@ -1,0 +1,3 @@
+No retail: duna(только оптовый каталог), electrofrig(только оптовый каталог), fijamom(только оптовый каталог), favale(только оптовый каталог), fluorgaz(нет сайта), distribuidora jc(есть таблица, нет сайта), casa jarse(есть список, нет цен на), belgrano (только оптовый каталог), nueva hera (нет сайта)
+
+Retail: ansal, reld, bellini, norfrig, roma, uriarte(не грузит)

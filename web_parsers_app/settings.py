@@ -40,6 +40,10 @@ def get_json_file(parser_name: str) -> Path:
     return JSON_FILES[parser_name]
 
 
+def get_json_file_retail(parser_name: str) -> Path:
+    return JSON_FILES[parser_name]
+
+
 def get_supplier_name(parser_name: str) -> str:
     return SUPPLIER_NAMES[parser_name]
 
