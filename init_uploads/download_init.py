@@ -24,8 +24,10 @@ logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+PRODS_CODES_FILE = "prods_codes.xlsx"
+
 SUPPLIERS_FILE = os.path.join(BASE_DIR, "download_files", "Копия Список поставщиков.xlsx")
-PRODUCTS_FILE = os.path.join(BASE_DIR, "result_with_electrofrig_unique.xlsx")
+PRODUCTS_FILE = os.path.join(BASE_DIR, PRODS_CODES_FILE)
 SUPPLIER_LINKS_FILE = PRODUCTS_FILE
 MERCADO_SHOPS_FILE = os.path.join(BASE_DIR, "download_files", "mercado_shops.xlsx")
 

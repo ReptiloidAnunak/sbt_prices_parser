@@ -174,6 +174,7 @@ def import_products(request):
         code = item.get("code")
         title = item.get("title")
         raw_price = item.get("price")
+        url = item.get("url") or None
         currency = str(
             item.get("currency") or supplier.currency or "ARS"
         ).upper().strip()
@@ -246,24 +247,38 @@ def import_products(request):
                 str(title).strip()[:255] if title else ""
             )
 
+            clean_url = str(url).strip() if url else None
+
+            if clean_url:
+                product_price_obj.link = clean_url
+
             if price_type == "retail":
                 product_price_obj.price_retail = price
-                product_price_obj.save(
-                    update_fields=[
-                        "price_retail",
-                        "supplier_prod_title",
-                    ]
-                )
+
+                update_fields = [
+                    "price_retail",
+                    "supplier_prod_title",
+                ]
+
+                if clean_url:
+                    update_fields.append("link")
+
+                product_price_obj.save(update_fields=update_fields)
+
             else:
                 product_price_obj.price_wholesale = price
                 product_price_obj.price_wholesale_final = final_price
-                product_price_obj.save(
-                    update_fields=[
-                        "price_wholesale",
-                        "price_wholesale_final",
-                        "supplier_prod_title",
-                    ]
-                )
+
+                update_fields = [
+                    "price_wholesale",
+                    "price_wholesale_final",
+                    "supplier_prod_title",
+                ]
+
+                if clean_url:
+                    update_fields.append("link")
+
+                product_price_obj.save(update_fields=update_fields)
 
             updated += 1
             row_status = "updated"

@@ -164,9 +164,12 @@ def run():
 
             total_products = collect_prods(page)
 
-            send_products_json(JSON_FILE, SUPPLIER_NAME)
+            api_result = send_products_json(JSON_FILE, SUPPLIER_NAME)
 
-            logger.info('Pansing finished')
+            logger.info(
+                f"{PARSER_NAME} parsing finished. "
+                f"API result: {api_result}"
+                )
 
             return {
                 "status": "ok",

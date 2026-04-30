@@ -1,7 +1,7 @@
 import json
 import os
 import time
-
+import re
 from bs4 import BeautifulSoup
 import requests
 
@@ -81,6 +81,9 @@ def get_products():
                 price_tag = card.find("bdi")
                 price = price_tag.text.strip() if price_tag else None
 
+                if re.match(r'\d+.\d+.\d+', price):
+                    price.replace('.', '', 1)
+
                 result.append({
                     "code": sku,
                     "title": title,
@@ -123,7 +126,12 @@ def run():
 
         save_to_json(products)
 
-        send_products_json(JSON_FILE, SUPPLIER_NAME)
+        api_result = send_products_json(JSON_FILE, SUPPLIER_NAME)
+
+        logger.info(
+            f"{PARSER_NAME} parsing finished. "
+            f"API result: {api_result}"
+            )
 
         return {
             "status": "ok",

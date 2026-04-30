@@ -155,7 +155,12 @@ def run():
                 current_page += 1
                 sleep_random(3, 5)
 
-            send_products_json(JSON_FILE, SUPPLIER_NAME)
+                api_result = send_products_json(JSON_FILE, SUPPLIER_NAME)
+
+                logger.info(
+                    f"{PARSER_NAME} parsing finished. "
+                    f"API result: {api_result}"
+                    )
 
             return {
                 "status": "ok",

@@ -314,7 +314,7 @@ def run(retail=False):
 
             total_products = collect_prods(page)
 
-            send_products_json(
+            api_result = send_products_json(
                 JSON_FILE,
                 SUPPLIER_NAME,
                 parser_name=PARSER_NAME,
@@ -336,6 +336,10 @@ def run(retail=False):
 
         finally:
             browser.close()
+            logger.info(
+            f"Ansal parsing finished. "
+            f"Total products: {total_products}. API result: {api_result}"
+            )
 
 
 if __name__ == "__main__":
