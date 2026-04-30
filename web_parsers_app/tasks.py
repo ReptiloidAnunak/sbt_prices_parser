@@ -2,6 +2,7 @@ from celery import shared_task, chain
 from django.utils import timezone
 
 from web_parsers_app.parsers.ansal import run as run_ansal
+from web_parsers_app.parsers import ansal_retail
 from web_parsers_app.parsers.duna import run as run_duna
 from web_parsers_app.parsers.electrocity import run as run_electrocity
 from web_parsers_app.parsers.electrofrig import run as run_electrofrig
@@ -22,6 +23,7 @@ PARSERS = {
     "reld_retail": run_reld_retail,
     "bellini_retail": run_bellini_retail,
     "refrigeracion_norte_retail": run_refrigeracion_norte_retail,
+    "ansal_retail": ansal_retail.run,
 }
 
 
@@ -118,4 +120,5 @@ def run_all_web_parsers():
         run_web_parser.si("roma"),
         run_web_parser.si("reld_retail"),
         run_ansal_parser.si(),
+        run_web_parser.si("ansal_retail"),
     ).apply_async()

@@ -12,6 +12,7 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 JSON_FILES = {
     "ansal": DATA_DIR / "ansal_products.json",
+    "ansal_retail": DATA_DIR / "ansal_retail_products.json",
     "duna": DATA_DIR / "duna_products.json",
     "electrocity": DATA_DIR / "electrocity_products.json",
     "electrofrig": DATA_DIR / "electrofrig_products.json",
@@ -26,6 +27,7 @@ JSON_FILES = {
 
 SUPPLIER_NAMES = {
     "ansal": "Ansal",
+    "ansal_retail": "Ansal",
     "duna": "Duna srl",
     "electrocity": "Electrocity",
     "electrofrig": "Electrofrig",

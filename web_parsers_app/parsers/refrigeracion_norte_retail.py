@@ -2,6 +2,8 @@ import json
 import os
 import time
 import re
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+
 from bs4 import BeautifulSoup
 import requests
 
@@ -31,6 +33,51 @@ HEADERS = {
 }
 
 
+def parse_price(value):
+    if not value:
+        return None
+
+    raw = str(value).strip()
+
+    value = (
+        raw.replace("$", "")
+        .replace("ARS", "")
+        .replace("U$S", "")
+        .replace("USD", "")
+        .replace(" ", "")
+        .replace("\xa0", "")
+        .strip()
+    )
+
+    value = re.sub(r"[^\d,.-]", "", value)
+
+    if not value:
+        return None
+
+    # AR: 711.182,50 -> 711182.50
+    if "," in value and "." in value:
+        if value.find(".") < value.find(","):
+            value = value.replace(".", "").replace(",", ".")
+        else:
+            value = value.replace(",", "")
+
+    # AR: 711,50 -> 711.50
+    elif "," in value:
+        value = value.replace(",", ".")
+
+    # AR thousands: 711.182 -> 711182
+    elif "." in value:
+        parts = value.split(".")
+        if len(parts) > 1 and len(parts[-1]) == 3:
+            value = value.replace(".", "")
+
+    try:
+        return str(Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+    except (InvalidOperation, ValueError):
+        logger.warning(f"Could not parse price: raw={raw}, cleaned={value}")
+        return None
+
+
 def get_products():
     result = []
 
@@ -44,7 +91,7 @@ def get_products():
     soup = BeautifulSoup(page_html.content, "html.parser")
 
     page_numbers = soup.find_all("a", class_="page-numbers")
-    last_page = int(page_numbers[-2].text.strip()) if page_numbers else 1
+    last_page = int(page_numbers[-2].text.strip()) if len(page_numbers) >= 2 else 1
 
     pages_links = [
         f"{BASE_URL}/page/{n}/"
@@ -75,20 +122,24 @@ def get_products():
                 if not title_tag:
                     continue
 
-                title = title_tag.text.strip()
-                url = title_tag["href"]
+                title = title_tag.get_text(" ", strip=True)
+                url = title_tag.get("href", "").strip()
 
                 price_tag = card.find("bdi")
-                price = price_tag.text.strip() if price_tag else None
+                price = parse_price(price_tag.get_text(" ", strip=True)) if price_tag else None
 
-                if re.match(r'\d+.\d+.\d+', price):
-                    price.replace('.', '', 1)
+                if not sku or not title or price is None:
+                    logger.warning(
+                        f"Skip Refrigeracion Norte product: sku={sku}, title={title}, price={price}"
+                    )
+                    continue
 
                 result.append({
                     "code": sku,
                     "title": title,
                     "price": price,
                     "url": url,
+                    "currency": "ARS",
                 })
 
             except Exception as e:
@@ -126,16 +177,23 @@ def run():
 
         save_to_json(products)
 
-        api_result = send_products_json(JSON_FILE, SUPPLIER_NAME)
+        api_result = send_products_json(
+            JSON_FILE,
+            SUPPLIER_NAME,
+            parser_name=PARSER_NAME,
+            price_type="retail",
+        )
 
         logger.info(
             f"{PARSER_NAME} parsing finished. "
-            f"API result: {api_result}"
-            )
+            f"Products: {len(products)}. API result: {api_result}"
+        )
 
         return {
             "status": "ok",
             "supplier": SUPPLIER_NAME,
+            "parser_name": PARSER_NAME,
+            "price_type": "retail",
             "products": len(products),
         }
 
