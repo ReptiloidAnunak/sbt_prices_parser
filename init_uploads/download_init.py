@@ -158,6 +158,7 @@ def load_suppliers():
         currency = row.get("Валюта")
         login = row.get("Логин")
         password = row.get("Пароль")
+        data_type = row.get("Данные")
 
         if pd.isna(name):
             continue
@@ -191,6 +192,7 @@ def load_suppliers():
                 "currency": currency,
                 "login": login,
                 "password": password,
+                "data_type": data_type,
             },
         )
 

@@ -13,6 +13,11 @@ class CurrencyChoices(models.TextChoices):
     ARS = "ARS", "ARS"
 
 
+class DataType(models.TextChoices):
+    doc = 'doc', 'doc'
+    web = 'web', 'web'
+    doc_web = 'doc, web'
+
 # --- Перезапись файла
 class OverwriteStorage(FileSystemStorage):
     def get_available_name(self, name, max_length=None):
@@ -50,6 +55,8 @@ class Supplier(models.Model):
         null=True,
         verbose_name="Сайт"
     )
+
+    data_type = models.CharField(choices=DataType, verbose_name="Тип данных", null=True, blank=True)
 
     contact_email = models.EmailField(
         blank=True,

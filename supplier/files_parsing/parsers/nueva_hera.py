@@ -62,7 +62,7 @@ class NuevaHeraParser(BaseParser):
             if price_idx == -1 or price_idx <= code_idx:
                 continue
 
-            code = self._clean_value(row_values[code_idx])
+            code = self._clean_value(row_values[code_idx]).strip('Cod. ')
             title = " ".join(
                 [row_values[i] for i in range(code_idx + 1, price_idx) if row_values[i]]
             ).strip()

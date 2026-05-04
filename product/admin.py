@@ -132,8 +132,9 @@ class SupplierAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "website",
-        "contact_email",
-        "whatsapp",
+        'data_type',
+        # "contact_email",
+        # "whatsapp",
         "price_list_link",
         "iva_in_price",
         "ib_caba_in_prise",

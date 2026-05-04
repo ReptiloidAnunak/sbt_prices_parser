@@ -4,7 +4,6 @@ from io import BytesIO
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 import pandas as pd
-
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.base import ContentFile
@@ -18,6 +17,10 @@ from supplier.models import Supplier
 logger = logging.getLogger(__name__)
 
 VALID_PRICE_TYPES = {"wholesale", "retail"}
+
+
+import re
+
 
 
 def clean_decimal(value):
@@ -39,9 +42,7 @@ def clean_decimal(value):
         .replace("\xa0", "")
         .strip()
     )
-
-    # Если прилетело "6.194,66" — это аргентинский формат.
-    # Если прилетело "6194.66" — это уже нормальный float/decimal формат.
+    
     if "," in value:
         value = value.replace(".", "").replace(",", ".")
 

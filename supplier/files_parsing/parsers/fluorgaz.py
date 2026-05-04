@@ -3,6 +3,18 @@ from decimal import Decimal, InvalidOperation
 from supplier.files_parsing.base import BaseParser
 
 
+import re
+
+def normalize_title(value):
+    if not value:
+        return None
+    value = str(value)
+    value = value.replace("\xa0", " ")
+    value = re.sub(r"\s+", " ", value)
+    return value.strip().upper()
+
+
+
 class FluorgazParser(BaseParser):
     def __init__(self, supplier=None):
         self.supplier = supplier
@@ -32,7 +44,7 @@ class FluorgazParser(BaseParser):
 
             result.append({
                 "code": None,
-                "title": product,
+                "title": normalize_title(product),
                 "price": price,
                 "currency": self._get_currency(default="USD"),
             })
