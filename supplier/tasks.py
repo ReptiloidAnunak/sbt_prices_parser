@@ -43,14 +43,12 @@ def process_price_list(supplier_id):
 
     for prod in data:
         try:
-            code = prod.get("code")
+            code = str(prod.get("code")).strip()
             title = prod.get("title")
             raw_price = prod.get("price")
             currency = str(
                 prod.get("currency") or supplier.currency or "ARS"
             ).upper().strip()
-
-            # цену считаем сразу, отдельно от кода
             price = to_decimal(raw_price)
 
             if raw_price is not None and price is None:
@@ -63,16 +61,18 @@ def process_price_list(supplier_id):
 
             # без кода мы не можем найти ProductSupplier
             if not code:
-                skipped += 1
-                print(f"Пропущено: нет кода | {title} | price={price}")
-                continue
-
-            code = str(code).strip()
-
-            prod_supplier = ProductSupplier.objects.filter(
+                
+                print(f"Hет кода | {title} | price={price}")
+                prod_supplier = ProductSupplier.objects.filter(
                 supplier=supplier,
-                supplier_prod_code=code,
-            ).first()
+                supplier_prod_title=title,
+                ).first()
+
+                if not prod_supplier: 
+                    prod_supplier = ProductSupplier.objects.filter(
+                        supplier=supplier,
+                        supplier_prod_code=code,
+                    ).first()
 
             if not prod_supplier:
                 not_found += 1

@@ -12,7 +12,7 @@ class FluorgazParser(BaseParser):
 
         header_row = self._find_header_row(df_raw)
         df = pd.read_excel(file_path, header=header_row)
-
+        df.columns = df.columns.str.replace('\xa0', ' ', regex=False)
         df.columns = [str(col).strip() for col in df.columns]
 
         col_product = "PRODUCTO"
